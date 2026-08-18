@@ -1,0 +1,15 @@
+source_food_code,source_food_name,regions_count,raffinose,stachyose,verbascose,ajugose,campesterol,stigmasterol,beta_sitosterol,phytate,total_saponin
+A001,"Amaranth seed, black (Amaranthus cruentus)",1,,,,,1.75,8.24,61.36,393.0,1.42
+A002,"Amaranth seed, pale brown (Amaranthus cruentus)",6,,,,,1.58,8.51,60.15,341.0,28.0
+A003,Bajra (Pennisetum typhoideum),6,0.08,0.01,,,15.84,4.97,75.87,485.0,
+A004,Barley (Hordeum vulgare),6,0.06,0.01,,,6.16,1.17,42.83,386.0,
+A005,Jowar (Sorghum vulgare),6,0.02,0.01,,,21.59,5.31,38.27,549.0,
+A006,"Maize, dry (Zea mays)",6,,,,,12.49,4.22,87.7,646.0,
+A007,"Maize, tender, local (Zea mays)",6,,,,,5.78,2.91,43.81,148.0,
+A008,"Maize, tender, sweet (Zea mays)",4,,,,,5.63,2.63,41.71,221.0,
+A009,Quinoa (Chenopodium quinoa),1,,,,,0.91,1.89,46.1,120.0,
+A010,Ragi (Eleusine coracana),5,0.02,,,,5.67,2.55,57.36,306.0,
+A011,Rice flakes (Oryza sativa ),6,,,,,3.48,2.15,21.26,474.0,
+A012,Rice puffed (Oryza sativa ),6,,,,,2.72,1.52,16.61,115.0,
+A013,"Rice, raw, brown (Oryza sativa )",6,0.08,,,,3.22,1.73,17.21,742.0,
+A014,"Rice, parboiled, milled (Oryza sativa )",6,0.08,,,,2.83,1.85,20.68,274.0,

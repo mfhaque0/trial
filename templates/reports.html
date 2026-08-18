@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<main class="page"><h1>Reports</h1><section class="card">{% for report in reports %}<p>{{report.full_name}} · {{report.created_at[:10]}}</p>{% else %}<p>No reports yet. Generate a report from a patient assessment when you are ready.</p>{% endfor %}</section></main>{% endblock %}

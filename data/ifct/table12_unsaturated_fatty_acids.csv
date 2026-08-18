@@ -1,0 +1,15 @@
+source_food_code,source_food_name,regions_count,f14d1_myristoleic,f16d1_palmitoleic,f18d1tn9_elaidic,f18d1n9_oleic,f20d1n9_eicosenoic,f22d1n9_erucic,f18d2n6_linoleic,f18d3n3_alpha_linolenic,fasat_total_saturated,fams_total_monounsaturated,fapu_total_polyunsaturated
+T001,Coconut oil,6,,,,7.24,,,1.9,,90.86,7.24,1.9
+T002,Corn oil,1,,1.7,,31.97,,,48.97,0.76,16.6,33.67,49.74
+T003,Cotton seed oil,1,,1.84,,17.82,,,51.81,0.35,28.17,19.66,52.16
+T004,Gingelly oil,6,,0.27,,40.87,0.27,,41.96,0.39,16.25,41.41,42.34
+T005,Groundnut oil,5,,,,53.89,,,27.17,,18.94,53.89,27.17
+T006,Mustard oil,6,,0.16,,10.18,5.45,51.3,15.55,11.64,5.72,67.09,27.19
+T007,Palm oil,4,,0.27,,43.26,,,11.18,0.3,44.98,43.53,11.49
+T008,Rice bran oil,5,,0.28,,43.84,,,31.56,0.56,23.76,44.12,32.12
+T009,Safflower oil,3,,0.24,,13.8,0.17,,76.58,0.13,9.19,14.04,76.78
+T010,Safflower oil (blended),4,,0.24,,37.37,,,42.09,0.78,19.53,37.61,42.86
+T011,Soyabean oil,6,,,,24.06,,,54.78,5.2,15.96,24.06,59.98
+T012,Sunflower oil,6,,,,25.96,,,62.65,,11.39,25.96,62.65
+T013,Ghee,6,0.95,1.86,0.44,23.19,,,2.0,0.55,71.02,26.44,2.54
+T014,Vanaspati,6,,,4.68,29.19,,,4.69,,61.44,33.87,4.69

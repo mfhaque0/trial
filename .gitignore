@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+instance/
+*.sqlite
+*.sqlite3
+*.db
+.vscode/
+.idea/
+.pytest_cache/
+.coverage
+*.pdf

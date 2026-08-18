@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Nutrition Assessment | SumiVital</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+    <style>
+
+        /* =========================================================
+           PAGE
+        ========================================================= */
+
+        .assessment-page {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 42px 24px 90px;
+        }
+
+
+        /* =========================================================
+           TOP BAR
+        ========================================================= */
+
+        .assessment-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .assessment-toolbar h1 {
+            margin: 0;
+            font-family: Georgia, serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 400;
+            color: #241b20;
+        }
+
+        .assessment-toolbar p {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: .95rem;
+        }
+
+        .eyebrow-result {
+            font-size: .7rem;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--deep);
+            font-weight: 800;
+            margin-bottom: 9px;
+        }
+
+
+        /* =========================================================
+           ACTION BUTTONS
+        ========================================================= */
+
+        .assessment-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .assessment-btn {
+            border: 1px solid #eadfe4;
+            background: #fff;
+            color: #30252b;
+            border-radius: 10px;
+            padding: 12px 17px;
+            cursor: pointer;
+            font-weight: 700;
+            transition:
+                transform .18s ease,
+                box-shadow .18s ease,
+                background .18s ease;
+        }
+
+        .assessment-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 22px rgba(45, 20, 32, .08);
+        }
+
+        .assessment-btn.primary {
+            background: var(--deep);
+            color: #fff;
+            border-color: var(--deep);
+        }
+
+
+        /* =========================================================
+           MAIN CARDS
+        ========================================================= */
+
+        .assessment-card {
+            background: rgba(255,255,255,.97);
+            border: 1px solid #eee2e7;
+            border-radius: 18px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(52, 28, 39, .035);
+        }
+
+        .assessment-card:hover {
+            box-shadow: 0 12px 34px rgba(52, 28, 39, .055);
+        }
+
+
+        /* =========================================================
+           PATIENT HEADER
+        ========================================================= */
+
+        .patient-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #eee2e7;
+        }
+
+        .patient-name {
+            font-family: Georgia, serif;
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 400;
+            margin: 0;
+            color: #241b20;
+        }
+
+        .patient-meta {
+            color: var(--muted);
+            margin-top: 9px;
+            font-size: .95rem;
+        }
+
+        .assessment-date {
+            color: #6e6269;
+            font-size: .88rem;
+            text-align: right;
+        }
+
+        .assessment-date strong {
+            display: block;
+            color: #241b20;
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+
+        /* =========================================================
+           WARNING
+        ========================================================= */
+
+        .warning-box {
+            border: 1px solid #fed7aa;
+            border-left: 4px solid #ea580c;
+            background: #fff7ed;
+            padding: 17px 19px;
+            border-radius: 10px;
+            margin-top: 24px;
+            color: #9a3412;
+        }
+
+        .warning-box strong {
+            color: #9a3412;
+        }
+
+        .warning-box ul {
+            margin-bottom: 0;
+        }
+
+
+        /* =========================================================
+           BASIC RESULT GRID
+        ========================================================= */
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .result-stat {
+            border: 1px solid #eee2e7;
+            border-radius: 14px;
+            padding: 20px;
+            background: #fff;
+            min-height: 125px;
+        }
+
+        .result-stat-label {
+            color: #83747c;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            font-weight: 700;
+        }
+
+        .result-stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-top: 10px;
+            color: #241b20;
+        }
+
+        .result-stat-note {
+            color: var(--muted);
+            font-size: .83rem;
+            margin-top: 5px;
+        }
+
+
+        /* =========================================================
+           CALORIE TARGET
+        ========================================================= */
+
+        .target-card {
+            background: #e7f3e9;
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 20px;
+            border: 1px solid #d7eadb;
+        }
+
+        .target-value {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            line-height: 1;
+            margin-top: 10px;
+            color: #241b20;
+        }
+
+        .target-unit {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-left: 5px;
+            color: #574950;
+        }
+
+
+        /* =========================================================
+           SECTION TITLES
+        ========================================================= */
+
+        .section-title {
+            font-family: Georgia, serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin: 0 0 22px;
+            color: #241b20;
+        }
+
+
+        /* =========================================================
+           MACROS
+        ========================================================= */
+
+        .macro-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #eee2e7;
+        }
+
+        .macro-item:last-child {
+            border-bottom: 0;
+        }
+
+        .macro-row {
+            display: grid;
+            grid-template-columns: 1fr 90px 120px;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .macro-name {
+            font-weight: 750;
+            color: #30252b;
+        }
+
+        .macro-percent {
+            text-align: right;
+            color: #74666e;
+        }
+
+        .macro-grams {
+            text-align: right;
+            font-weight: 800;
+            color: #241b20;
+        }
+
+        .macro-bar {
+            height: 9px;
+            border-radius: 99px;
+            background: #eee9eb;
+            overflow: hidden;
+            margin-top: 11px;
+        }
+
+        .macro-fill {
+            height: 100%;
+            background: var(--deep);
+            border-radius: inherit;
+            transition: width .5s ease;
+        }
+
+
+        /* =========================================================
+           FLUID
+        ========================================================= */
+
+        .fluid-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding: 23px;
+            border: 1px solid #eee2e7;
+            border-radius: 14px;
+            background: #fff;
+        }
+
+        .fluid-method {
+            color: var(--muted);
+            font-size: .82rem;
+            margin-bottom: 7px;
+        }
+
+        .fluid-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #241b20;
+        }
+
+        .fluid-range {
+            text-align: right;
+            color: var(--muted);
+            font-size: .85rem;
+        }
+
+        .fluid-range strong {
+            display: block;
+            color: #30252b;
+            font-size: 1rem;
+            margin-top: 4px;
+        }
+
+
+        /* =========================================================
+           BMI CLASSIFICATION
+        ========================================================= */
+
+        .bmi-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .bmi-highlight {
+            padding: 22px;
+            border-radius: 14px;
+            border: 1px solid #eee2e7;
+            background: #fff;
+        }
+
+        .bmi-number {
+            font-size: 2.3rem;
+            font-weight: 800;
+            color: #241b20;
+        }
+
+        .bmi-grade {
+            margin-top: 6px;
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .bmi-description {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: .85rem;
+        }
+
+
+        /* =========================================================
+           BMI CHART
+        ========================================================= */
+
+        .bmi-chart {
+            margin-top: 15px;
+        }
+
+        .bmi-scale {
+            position: relative;
+            padding-top: 27px;
+        }
+
+        .bmi-bar {
+            height: 18px;
+            border-radius: 99px;
+            overflow: hidden;
+            display: flex;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+        }
+
+        .bmi-segment {
+            height: 100%;
+        }
+
+        .bmi-under {
+            width: 11.67%;
+            background: #60a5fa;
+        }
+
+        .bmi-healthy {
+            width: 21.67%;
+            background: #4ade80;
+        }
+
+        .bmi-over {
+            width: 16.67%;
+            background: #facc15;
+        }
+
+        .bmi-ob1 {
+            width: 16.67%;
+            background: #fb923c;
+        }
+
+        .bmi-ob2 {
+            width: 16.66%;
+            background: #ef4444;
+        }
+
+        .bmi-ob3 {
+            width: 16.67%;
+            background: #b91c1c;
+        }
+
+        .bmi-marker {
+            position: absolute;
+            top: 20px;
+            width: 4px;
+            height: 30px;
+            background: #241b20;
+            border-radius: 4px;
+            transform: translateX(-50%);
+            z-index: 3;
+            box-shadow: 0 2px 6px rgba(0,0,0,.18);
+        }
+
+        .bmi-marker-label {
+            position: absolute;
+            top: -1px;
+            transform: translateX(-50%);
+            background: #241b20;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: .72rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .bmi-legend {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 13px;
+        }
+
+        .bmi-legend-item {
+            font-size: .72rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .bmi-legend-item strong {
+            display: block;
+            color: #30252b;
+            font-size: .75rem;
+        }
+
+
+        /* =========================================================
+           CLINICAL NOTES
+        ========================================================= */
+
+        .clinical-note {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 11px;
+            padding: 17px;
+            color: #475569;
+            font-size: .88rem;
+            line-height: 1.65;
+        }
+
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+        @media (max-width: 900px) {
+
+            .result-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .assessment-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .assessment-actions {
+                justify-content: flex-start;
+            }
+
+        }
+
+
+        @media (max-width: 650px) {
+
+            .assessment-page {
+                padding: 24px 14px 55px;
+            }
+
+            .assessment-card {
+                padding: 20px;
+                border-radius: 14px;
+            }
+
+            .patient-header {
+                flex-direction: column;
+            }
+
+            .assessment-date {
+                text-align: left;
+            }
+
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .result-stat {
+                padding: 15px;
+                min-height: 110px;
+            }
+
+            .result-stat-value {
+                font-size: 1.4rem;
+            }
+
+            .macro-row {
+                grid-template-columns: 1fr auto;
+            }
+
+            .macro-grams {
+                grid-column: 2;
+            }
+
+            .macro-bar {
+                grid-column: 1 / -1;
+            }
+
+            .fluid-box {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .fluid-range {
+                text-align: left;
+            }
+
+            .bmi-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .bmi-legend {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+        }
+
+
+        @media print {
+
+            body {
+                background: white !important;
+            }
+
+            .assessment-toolbar {
+                display: none !important;
+            }
+
+            .assessment-page {
+                max-width: none;
+                padding: 0;
+            }
+
+            .assessment-card {
+                box-shadow: none;
+                break-inside: avoid;
+                border: 1px solid #ddd;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+{% include "partials/header.html" ignore missing %}
+
+
+<main class="assessment-page">
+
+
+    <!-- =========================================================
+         HEADER
+    ========================================================== -->
+
+    <div class="assessment-toolbar">
+
+        <div>
+
+            <div class="eyebrow-result">
+                Patient Nutrition Assessment
+            </div>
+
+            <h1>
+                Nutrition Summary
+            </h1>
+
+            <p>
+                Estimated daily nutrition requirements and clinical indicators.
+            </p>
+
+        </div>
+
+
+        <div class="assessment-actions">
+
+            <button
+                type="button"
+                class="assessment-btn"
+                onclick="window.location.href='/calculators'"
+            >
+                ← Back to Calculator
+            </button>
+
+
+            <button
+                type="button"
+                class="assessment-btn"
+                onclick="window.print()"
+            >
+                Print / Save PDF
+            </button>
+
+
+            <button
+                type="button"
+                class="assessment-btn primary"
+                id="download-image"
+            >
+                Download Image
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         RESULT CONTENT
+    ========================================================== -->
+
+    <div id="assessment-content">
+
+
+        <!-- =====================================================
+             PATIENT + MAIN RESULTS
+        ====================================================== -->
+
+        <section class="assessment-card">
+
+
+            <div class="patient-header">
+
+                <div>
+
+                    <div class="eyebrow-result">
+                        Patient
+                    </div>
+
+                    <h2
+                        class="patient-name"
+                        id="patient-name"
+                    >
+                        Patient
+                    </h2>
+
+                    <div
+                        class="patient-meta"
+                        id="patient-meta"
+                    >
+                        Nutrition assessment
+                    </div>
+
+                </div>
+
+
+                <div class="assessment-date">
+
+                    Assessment Date
+
+                    <strong id="assessment-date">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- WARNINGS -->
+
+            <div id="warnings"></div>
+
+
+
+            <!-- BASIC RESULTS -->
+
+            <div
+                class="result-grid"
+                id="basic-results"
+            ></div>
+
+
+
+            <!-- CALORIE TARGET -->
+
+            <div
+                class="target-card"
+                id="target-card"
+            ></div>
+
+
+        </section>
+
+
+
+        <!-- =====================================================
+             MACRONUTRIENTS
+        ====================================================== -->
+
+        <section class="assessment-card">
+
+            <h2 class="section-title">
+                Macronutrient Targets
+            </h2>
+
+            <div id="macros"></div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             FLUID
+        ====================================================== -->
+
+        <section class="assessment-card">
+
+            <h2 class="section-title">
+                Fluid Requirement
+            </h2>
+
+            <div id="fluid"></div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             BMI
+        ====================================================== -->
+
+        <section class="assessment-card">
+
+            <h2 class="section-title">
+                BMI Classification
+            </h2>
+
+            <div id="bmi-section"></div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             CLINICAL NOTES
+        ====================================================== -->
+
+        <section class="assessment-card">
+
+            <h2 class="section-title">
+                Clinical Notes
+            </h2>
+
+            <div class="clinical-note">
+
+                These calculations are estimates based on standard
+                nutrition equations. They should be interpreted alongside
+                professional clinical assessment, patient history and
+                ongoing monitoring.
+
+            </div>
+
+        </section>
+
+
+    </div>
+
+</main>
+
+
+
+<!-- =============================================================
+     HTML2CANVAS
+============================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+></script>
+
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+
+    /* =========================================================
+       LOAD STORED ASSESSMENT
+    ========================================================== */
+
+    const stored =
+        sessionStorage.getItem("nutritionAssessment");
+
+
+    if (!stored) {
+
+        window.location.href = "/calculators";
+
+        return;
+
+    }
+
+
+    let assessment;
+
+
+    try {
+
+        assessment = JSON.parse(stored);
+
+    } catch (error) {
+
+        sessionStorage.removeItem("nutritionAssessment");
+
+        window.location.href = "/calculators";
+
+        return;
+
+    }
+
+
+
+    const patient =
+        assessment.patient || "Patient";
+
+
+    const data =
+        assessment.data || {};
+
+
+
+    /* =========================================================
+       HELPERS
+    ========================================================== */
+
+    const safe = (
+        value,
+        fallback = "—"
+    ) => {
+
+        return (
+            value !== undefined &&
+            value !== null &&
+            value !== ""
+        )
+            ? value
+            : fallback;
+
+    };
+
+
+    const number = (
+        value,
+        digits = 1
+    ) => {
+
+        const n = Number(value);
+
+        return Number.isFinite(n)
+            ? n.toFixed(digits)
+            : "—";
+
+    };
+
+
+    const escapeHTML = (value) => {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    };
+
+
+
+    /* =========================================================
+       PATIENT
+    ========================================================== */
+
+    document
+        .getElementById("patient-name")
+        .textContent = patient;
+
+
+    const p =
+        data.patient || {};
+
+
+    document
+        .getElementById("patient-meta")
+        .textContent =
+            `${safe(p.age, "")} years · ` +
+            `${safe(p.sex, "")} · ` +
+            `${number(p.weight_kg, 1)} kg · ` +
+            `${number(p.height_cm, 1)} cm`;
+
+
+    document
+        .getElementById("assessment-date")
+        .textContent =
+            new Date().toLocaleDateString(
+                "en-IN",
+                {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric"
+                }
+            );
+
+
+
+    /* =========================================================
+       WARNINGS
+    ========================================================== */
+
+    const warnings =
+        document.getElementById("warnings");
+
+
+    if (
+        Array.isArray(data.warnings) &&
+        data.warnings.length
+    ) {
+
+        warnings.innerHTML = `
+
+            <div class="warning-box">
+
+                <strong>
+                    ⚠ Clinical Notices
+                </strong>
+
+                <ul style="margin:9px 0 0 20px;">
+
+                    ${
+                        data.warnings
+                            .map(warning => {
+
+                                const message =
+                                    typeof warning === "string"
+                                        ? warning
+                                        : (
+                                            warning?.message ||
+                                            "Please review the assessment."
+                                        );
+
+                                return `
+                                    <li>
+                                        ${escapeHTML(message)}
+                                    </li>
+                                `;
+
+                            })
+                            .join("")
+                    }
+
+                </ul>
+
+            </div>
+
+        `;
+
+    }
+
+
+
+    /* =========================================================
+       BASIC RESULTS
+    ========================================================== */
+
+    const bmi =
+        data.bmi || {};
+
+
+    const ibw =
+        data.ibw || {};
+
+
+    const ree =
+        data.ree ||
+        data.bmr ||
+        {};
+
+
+    document
+        .getElementById("basic-results")
+        .innerHTML = `
+
+            <div class="result-stat">
+
+                <div class="result-stat-label">
+                    BMI
+                </div>
+
+                <div class="result-stat-value">
+                    ${number(bmi.value, 1)}
+                </div>
+
+                <div class="result-stat-note">
+                    ${escapeHTML(
+                        safe(bmi.category, "Classification")
+                    )}
+                </div>
+
+            </div>
+
+
+            <div class="result-stat">
+
+                <div class="result-stat-label">
+                    Ideal Body Weight
+                </div>
+
+                <div class="result-stat-value">
+                    ${number(ibw.value, 1)}
+                </div>
+
+                <div class="result-stat-note">
+                    kg · Devine reference
+                </div>
+
+            </div>
+
+
+            <div class="result-stat">
+
+                <div class="result-stat-label">
+                    REE / BMR
+                </div>
+
+                <div class="result-stat-value">
+                    ${safe(
+                        ree.value,
+                        data.bmr
+                    )}
+                </div>
+
+                <div class="result-stat-note">
+                    kcal/day
+                </div>
+
+            </div>
+
+
+            <div class="result-stat">
+
+                <div class="result-stat-label">
+                    TDEE
+                </div>
+
+                <div class="result-stat-value">
+                    ${safe(data.tdee)}
+                </div>
+
+                <div class="result-stat-note">
+                    kcal/day
+                </div>
+
+            </div>
+
+        `;
+
+
+
+    /* =========================================================
+       CALORIE TARGET
+    ========================================================== */
+
+    document
+        .getElementById("target-card")
+        .innerHTML = `
+
+            <div class="eyebrow-result">
+                Daily Calorie Target
+            </div>
+
+            <div class="target-value">
+
+                ${safe(data.target)}
+
+                <span class="target-unit">
+                    kcal/day
+                </span>
+
+            </div>
+
+        `;
+
+
+
+    /* =========================================================
+       MACRONUTRIENTS
+    ========================================================== */
+
+    const macros =
+        data.macros || {};
+
+
+    const protein =
+        macros.protein || {};
+
+
+    const carbs =
+        macros.carbohydrate ||
+        macros.carbs ||
+        {};
+
+
+    const fat =
+        macros.fat || {};
+
+
+    const macroHTML = (
+        name,
+        macro
+    ) => {
+
+        const percentage =
+            Number(macro.percentage) || 0;
+
+
+        return `
+
+            <div class="macro-item">
+
+                <div class="macro-row">
+
+                    <div class="macro-name">
+                        ${name}
+                    </div>
+
+                    <div class="macro-percent">
+                        ${number(
+                            macro.percentage,
+                            1
+                        )}%
+                    </div>
+
+                    <div class="macro-grams">
+                        ${number(
+                            macro.grams,
+                            1
+                        )} g/day
+                    </div>
+
+                </div>
+
+
+                <div class="macro-bar">
+
+                    <div
+                        class="macro-fill"
+                        style="
+                            width:${Math.min(
+                                100,
+                                Math.max(
+                                    0,
+                                    percentage
+                                )
+                            )}%;
+                        "
+                    ></div>
+
+                </div>
+
+            </div>
+
+        `;
+
+    };
+
+
+    document
+        .getElementById("macros")
+        .innerHTML =
+
+            macroHTML(
+                "Protein",
+                protein
+            ) +
+
+            macroHTML(
+                "Carbohydrate",
+                carbs
+            ) +
+
+            macroHTML(
+                "Fat",
+                fat
+            );
+
+
+
+    /* =========================================================
+       FLUID
+    ========================================================== */
+
+    const fluid =
+        data.fluid || {};
+
+
+    const range =
+        Array.isArray(
+            fluid.estimated_l_range
+        )
+            ? fluid.estimated_l_range
+                .map(v => number(v, 1))
+                .join("–") + " L/day"
+            : "—";
+
+
+    document
+        .getElementById("fluid")
+        .innerHTML = `
+
+            <div class="fluid-box">
+
+                <div>
+
+                    <div class="fluid-method">
+                        ${escapeHTML(
+                            safe(
+                                fluid.method,
+                                "Weight-based estimate"
+                            )
+                        )}
+                    </div>
+
+                    <div class="fluid-value">
+                        ${number(
+                            fluid.target_l,
+                            1
+                        )} L/day
+                    </div>
+
+                </div>
+
+
+                <div class="fluid-range">
+
+                    Estimated range
+
+                    <strong>
+                        ${range}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+
+    /* =========================================================
+       BMI CLASSIFICATION
+    ========================================================== */
+
+    const bmiValue =
+        Number(bmi.value);
+
+
+    let bmiGrade =
+        "Not available";
+
+
+    let bmiDescription =
+        "BMI classification";
+
+
+    let bmiColor =
+        "#64748b";
+
+
+    let bmiBackground =
+        "#f8fafc";
+
+
+    if (Number.isFinite(bmiValue)) {
+
+
+        if (bmiValue < 18.5) {
+
+            bmiGrade =
+                "Underweight";
+
+            bmiDescription =
+                "Below the standard healthy BMI range.";
+
+            bmiColor =
+                "#2563eb";
+
+            bmiBackground =
+                "#eff6ff";
+
+        }
+
+        else if (bmiValue < 25) {
+
+            bmiGrade =
+                "Healthy Weight";
+
+            bmiDescription =
+                "Within the standard healthy BMI range.";
+
+            bmiColor =
+                "#16a34a";
+
+            bmiBackground =
+                "#f0fdf4";
+
+        }
+
+        else if (bmiValue < 30) {
+
+            bmiGrade =
+                "Overweight";
+
+            bmiDescription =
+                "Above the standard healthy BMI range.";
+
+            bmiColor =
+                "#ca8a04";
+
+            bmiBackground =
+                "#fefce8";
+
+        }
+
+        else if (bmiValue < 35) {
+
+            bmiGrade =
+                "Obesity — Class I";
+
+            bmiDescription =
+                "BMI is within the Class I obesity range.";
+
+            bmiColor =
+                "#ea580c";
+
+            bmiBackground =
+                "#fff7ed";
+
+        }
+
+        else if (bmiValue < 40) {
+
+            bmiGrade =
+                "Obesity — Class II";
+
+            bmiDescription =
+                "BMI is within the Class II obesity range.";
+
+            bmiColor =
+                "#dc2626";
+
+            bmiBackground =
+                "#fef2f2";
+
+        }
+
+        else {
+
+            bmiGrade =
+                "Obesity — Class III";
+
+            bmiDescription =
+                "BMI is within the Class III obesity range.";
+
+            bmiColor =
+                "#991b1b";
+
+            bmiBackground =
+                "#fef2f2";
+
+        }
+
+    }
+
+
+
+    /*
+       BMI marker position.
+       Chart visually covers approximately BMI 15–45.
+    */
+
+    let markerPosition = 0;
+
+
+    if (Number.isFinite(bmiValue)) {
+
+        markerPosition =
+            ((bmiValue - 15) / 30) * 100;
+
+        markerPosition =
+            Math.max(
+                0,
+                Math.min(
+                    100,
+                    markerPosition
+                )
+            );
+
+    }
+
+
+
+    document
+        .getElementById("bmi-section")
+        .innerHTML = `
+
+            <div class="bmi-summary">
+
+
+                <div
+                    class="bmi-highlight"
+                    style="
+                        background:${bmiBackground};
+                        border-color:${bmiColor}55;
+                    "
+                >
+
+                    <div
+                        class="bmi-number"
+                        style="color:${bmiColor};"
+                    >
+                        ${number(
+                            bmiValue,
+                            1
+                        )}
+                    </div>
+
+                    <div
+                        class="bmi-grade"
+                        style="color:${bmiColor};"
+                    >
+                        ${bmiGrade}
+                    </div>
+
+                    <div class="bmi-description">
+                        ${bmiDescription}
+                    </div>
+
+                </div>
+
+
+                <div class="bmi-highlight">
+
+                    <div class="result-stat-label">
+                        Clinical Classification
+                    </div>
+
+                    <div
+                        style="
+                            font-size:1.15rem;
+                            font-weight:800;
+                            margin-top:10px;
+                            color:#241b20;
+                        "
+                    >
+                        ${escapeHTML(
+                            safe(
+                                bmi.category,
+                                bmiGrade
+                            )
+                        )}
+                    </div>
+
+                    <div class="bmi-description">
+                        BMI is a screening measure and should
+                        be interpreted with clinical context.
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="bmi-chart">
+
+                <div class="bmi-scale">
+
+
+                    <div
+                        class="bmi-marker"
+                        style="
+                            left:${markerPosition}%;
+                        "
+                    >
+
+                        <div
+                            class="bmi-marker-label"
+                            style="
+                                left:0;
+                            "
+                        >
+                            BMI ${number(
+                                bmiValue,
+                                1
+                            )}
+                        </div>
+
+                    </div>
+
+
+                    <div class="bmi-bar">
+
+                        <div class="bmi-segment bmi-under"></div>
+
+                        <div class="bmi-segment bmi-healthy"></div>
+
+                        <div class="bmi-segment bmi-over"></div>
+
+                        <div class="bmi-segment bmi-ob1"></div>
+
+                        <div class="bmi-segment bmi-ob2"></div>
+
+                        <div class="bmi-segment bmi-ob3"></div>
+
+                    </div>
+
+
+                    <div class="bmi-legend">
+
+                        <div class="bmi-legend-item">
+                            <strong>Underweight</strong>
+                            &lt; 18.5
+                        </div>
+
+                        <div class="bmi-legend-item">
+                            <strong>Healthy</strong>
+                            18.5–24.9
+                        </div>
+
+                        <div class="bmi-legend-item">
+                            <strong>Overweight</strong>
+                            25–29.9
+                        </div>
+
+                        <div class="bmi-legend-item">
+                            <strong>Obesity I</strong>
+                            30–34.9
+                        </div>
+
+                        <div class="bmi-legend-item">
+                            <strong>Obesity II</strong>
+                            35–39.9
+                        </div>
+
+                        <div class="bmi-legend-item">
+                            <strong>Obesity III</strong>
+                            ≥ 40
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+
+    /* =========================================================
+       DOWNLOAD RESULT AS IMAGE
+    ========================================================== */
+
+    document
+        .getElementById("download-image")
+        .addEventListener(
+            "click",
+            async () => {
+
+                const button =
+                    document.getElementById(
+                        "download-image"
+                    );
+
+
+                const originalText =
+                    button.textContent;
+
+
+                button.textContent =
+                    "Preparing...";
+
+
+                button.disabled =
+                    true;
+
+
+                try {
+
+
+                    if (
+                        typeof html2canvas ===
+                        "undefined"
+                    ) {
+
+                        throw new Error(
+                            "Image export library is unavailable."
+                        );
+
+                    }
+
+
+                    const canvas =
+                        await html2canvas(
+                            document.getElementById(
+                                "assessment-content"
+                            ),
+                            {
+                                scale: 2,
+                                backgroundColor:
+                                    "#ffffff",
+                                useCORS: true
+                            }
+                        );
+
+
+                    const link =
+                        document.createElement(
+                            "a"
+                        );
+
+
+                    const safePatientName =
+                        patient
+                            .replace(
+                                /[^a-z0-9]/gi,
+                                "_"
+                            );
+
+
+                    link.download =
+                        `${safePatientName}_nutrition_assessment.png`;
+
+
+                    link.href =
+                        canvas.toDataURL(
+                            "image/png"
+                        );
+
+
+                    link.click();
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+
+                    alert(
+                        "Unable to create the image. " +
+                        "Please use Print / Save PDF instead."
+                    );
+
+
+                } finally {
+
+                    button.textContent =
+                        originalText;
+
+                    button.disabled =
+                        false;
+
+                }
+
+            }
+        );
+
+
+});
+
+</script>
+
+
+</body>
+
+</html>

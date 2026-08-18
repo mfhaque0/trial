@@ -1,0 +1,854 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<main class="page calculator-page">
+
+    <header class="page-header">
+        <p class="eyebrow">NUTRITION ASSESSMENT</p>
+
+        <h1>Nutrition Calculator</h1>
+
+        <p>
+            Calculate estimated energy, macronutrient and fluid
+            requirements for an individual patient.
+        </p>
+    </header>
+
+
+    <form id="calculator-form" novalidate>
+
+        <div
+            id="calculator-error"
+            class="form-error"
+            role="alert"
+            aria-live="polite"
+        ></div>
+
+
+        <div class="split">
+
+
+            <!-- =====================================================
+                 MAIN CALCULATOR
+                 ===================================================== -->
+
+            <section class="card">
+
+                <h2>Patient Information</h2>
+
+                <div class="field-grid">
+
+
+                    <!-- Patient Name -->
+
+                    <label for="patient-name">
+                        Patient Name
+
+                        <input
+                            id="patient-name"
+                            name="patient_name"
+                            type="text"
+                            maxlength="120"
+                            placeholder="Enter patient name"
+                            required
+                        >
+                    </label>
+
+
+                    <!-- Age -->
+
+                    <label for="age">
+                        Age (years)
+
+                        <input
+                            id="age"
+                            name="age"
+                            type="number"
+                            min="18"
+                            max="120"
+                            step="0.1"
+                            placeholder="e.g. 22"
+                            required
+                        >
+                    </label>
+
+
+                    <!-- Sex -->
+
+                    <label for="sex">
+                        Sex
+
+                        <select
+                            id="sex"
+                            name="sex"
+                            required
+                        >
+                            <option value="female">
+                                Female
+                            </option>
+
+                            <option value="male">
+                                Male
+                            </option>
+                        </select>
+                    </label>
+
+
+                    <!-- Weight Unit -->
+
+                    <label for="weight-unit">
+                        Weight Unit
+
+                        <select
+                            id="weight-unit"
+                            name="weight_unit"
+                        >
+                            <option value="kg">
+                                kg
+                            </option>
+
+                            <option value="lb">
+                                lb
+                            </option>
+                        </select>
+                    </label>
+
+
+                    <!-- Weight -->
+
+                    <label for="weight">
+                        Weight
+
+                        <input
+                            id="weight"
+                            name="weight"
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            placeholder="e.g. 60"
+                            required
+                        >
+                    </label>
+
+
+                    <!-- Height Unit -->
+
+                    <label for="height-unit">
+                        Height Unit
+
+                        <select
+                            id="height-unit"
+                            name="height_unit"
+                        >
+                            <option value="cm">
+                                cm
+                            </option>
+
+                            <option value="m">
+                                m
+                            </option>
+
+                            <option value="inches">
+                                inches
+                            </option>
+
+                            <option value="ft + inches">
+                                feet + inches
+                            </option>
+                        </select>
+                    </label>
+
+
+                    <!-- Normal Height -->
+
+                    <div id="height-single">
+
+                        <label for="height">
+                            Height
+
+                            <input
+                                id="height"
+                                name="height"
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                placeholder="e.g. 165"
+                                required
+                            >
+                        </label>
+
+                    </div>
+
+
+                    <!-- Feet + Inches -->
+
+                    <div
+                        id="height-feet"
+                        hidden
+                    >
+
+                        <div class="field-grid">
+
+                            <label for="height-feet-value">
+                                Feet
+
+                                <input
+                                    id="height-feet-value"
+                                    name="height_feet"
+                                    type="number"
+                                    min="1"
+                                    max="8"
+                                    step="1"
+                                    placeholder="e.g. 5"
+                                >
+                            </label>
+
+
+                            <label for="height-inches-value">
+                                Inches
+
+                                <input
+                                    id="height-inches-value"
+                                    name="height_inches"
+                                    type="number"
+                                    min="0"
+                                    max="11.9"
+                                    step="0.1"
+                                    placeholder="e.g. 5"
+                                >
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     ACTIVITY
+                     ================================================= -->
+
+                <fieldset>
+
+                    <legend>Activity Level</legend>
+
+                    <div class="activity-options">
+
+
+                        <label>
+
+                            <input
+                                type="radio"
+                                name="activity"
+                                value="sedentary"
+                                checked
+                            >
+
+                            <span>
+                                <strong>Sedentary</strong>
+
+                                <small>
+                                    Little or no exercise · 1.20
+                                </small>
+                            </span>
+
+                        </label>
+
+
+                        <label>
+
+                            <input
+                                type="radio"
+                                name="activity"
+                                value="light"
+                            >
+
+                            <span>
+                                <strong>Lightly Active</strong>
+
+                                <small>
+                                    1–3 days/week · 1.375
+                                </small>
+                            </span>
+
+                        </label>
+
+
+                        <label>
+
+                            <input
+                                type="radio"
+                                name="activity"
+                                value="moderate"
+                            >
+
+                            <span>
+                                <strong>Moderately Active</strong>
+
+                                <small>
+                                    3–5 days/week · 1.55
+                                </small>
+                            </span>
+
+                        </label>
+
+
+                        <label>
+
+                            <input
+                                type="radio"
+                                name="activity"
+                                value="very"
+                            >
+
+                            <span>
+                                <strong>Very Active</strong>
+
+                                <small>
+                                    6–7 days/week · 1.725
+                                </small>
+                            </span>
+
+                        </label>
+
+
+                        <label>
+
+                            <input
+                                type="radio"
+                                name="activity"
+                                value="extra"
+                            >
+
+                            <span>
+                                <strong>Extra Active</strong>
+
+                                <small>
+                                    Very hard exercise / physical job · 1.90
+                                </small>
+                            </span>
+
+                        </label>
+
+
+                    </div>
+
+                </fieldset>
+
+
+                <!-- =================================================
+                     GOAL
+                     ================================================= -->
+
+                <fieldset>
+
+                    <legend>Goal</legend>
+
+                    <div class="field-grid">
+
+
+                        <label for="goal">
+                            Nutrition Goal
+
+                            <select
+                                id="goal"
+                                name="goal"
+                            >
+
+                                <option value="maintain">
+                                    Weight Maintenance
+                                </option>
+
+                                <option value="loss">
+                                    Weight Loss
+                                </option>
+
+                                <option value="gain">
+                                    Weight Gain
+                                </option>
+
+                            </select>
+
+                        </label>
+
+
+                        <!-- Weight Loss -->
+
+                        <div
+                            id="deficit-field"
+                            hidden
+                        >
+
+                            <label for="custom-deficit">
+                                Custom Deficit
+
+                                <input
+                                    id="custom-deficit"
+                                    name="custom_deficit"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value="500"
+                                >
+
+                                <small>
+                                    kcal/day · default 500
+                                </small>
+
+                            </label>
+
+                        </div>
+
+
+                        <!-- Weight Gain -->
+
+                        <div
+                            id="surplus-field"
+                            hidden
+                        >
+
+                            <label for="custom-surplus">
+                                Custom Surplus
+
+                                <input
+                                    id="custom-surplus"
+                                    name="custom_surplus"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value="300"
+                                >
+
+                                <small>
+                                    kcal/day · default 300
+                                </small>
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </fieldset>
+
+
+                <!-- =================================================
+                     MACRONUTRIENTS
+                     ================================================= -->
+
+                <fieldset>
+
+                    <legend>Macronutrient Distribution</legend>
+
+                    <p class="field-help">
+                        Set the percentage of target calories coming
+                        from carbohydrate, protein and fat.
+                    </p>
+
+
+                    <div class="field-grid">
+
+
+                        <label for="carbs">
+                            Carbohydrate %
+
+                            <input
+                                id="carbs"
+                                name="carbs_pct"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value="55"
+                            >
+                        </label>
+
+
+                        <label for="protein">
+                            Protein %
+
+                            <input
+                                id="protein"
+                                name="protein_pct"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value="15"
+                            >
+                        </label>
+
+
+                        <label for="fat">
+                            Fat %
+
+                            <input
+                                id="fat"
+                                name="fat_pct"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value="30"
+                            >
+                        </label>
+
+                    </div>
+
+
+                    <div
+                        id="macro-total"
+                        class="field-help"
+                        aria-live="polite"
+                    >
+                        Macro total: 100%
+                    </div>
+
+                </fieldset>
+
+
+                <!-- =================================================
+                     ADVANCED / CLINICAL DETAILS
+                     ================================================= -->
+
+                <details
+                    class="advanced-section"
+                    id="advanced-section"
+                >
+
+                    <summary>
+                        <span>
+                            Advanced / Clinical Details
+                        </span>
+
+                        <small>
+                            Optional
+                        </small>
+                    </summary>
+
+
+                    <div class="advanced-content">
+
+
+                        <!-- Protein Method -->
+
+                        <fieldset>
+
+                            <legend>Protein Prescription</legend>
+
+                            <div class="field-grid">
+
+
+                                <label for="protein-method">
+                                    Protein Method
+
+                                    <select
+                                        id="protein-method"
+                                        name="protein_method"
+                                    >
+
+                                        <option value="percent">
+                                            Percentage of calories
+                                        </option>
+
+                                        <option value="g_per_kg">
+                                            Grams per kg body weight
+                                        </option>
+
+                                        <option value="custom_g">
+                                            Custom grams/day
+                                        </option>
+
+                                    </select>
+
+                                </label>
+
+
+                                <div
+                                    id="protein-g-per-kg-field"
+                                    hidden
+                                >
+
+                                    <label for="protein-g-per-kg">
+                                        Protein Requirement
+
+                                        <input
+                                            id="protein-g-per-kg"
+                                            name="protein_g_per_kg"
+                                            type="number"
+                                            min="0.1"
+                                            max="5"
+                                            step="0.01"
+                                            value="0.8"
+                                        >
+
+                                        <small>
+                                            g/kg/day
+                                        </small>
+
+                                    </label>
+
+                                </div>
+
+
+                                <div
+                                    id="protein-custom-g-field"
+                                    hidden
+                                >
+
+                                    <label for="protein-custom-g">
+                                        Custom Protein
+
+                                        <input
+                                            id="protein-custom-g"
+                                            name="protein_custom_g"
+                                            type="number"
+                                            min="0.1"
+                                            step="0.1"
+                                        >
+
+                                        <small>
+                                            g/day
+                                        </small>
+
+                                    </label>
+
+                                </div>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <!-- Fluid -->
+
+                        <fieldset>
+
+                            <legend>Fluid Requirement</legend>
+
+                            <div class="field-grid">
+
+
+                                <label for="fluid-method">
+                                    Fluid Method
+
+                                    <select
+                                        id="fluid-method"
+                                        name="fluid_method"
+                                    >
+
+                                        <option value="range">
+                                            General 30–35 mL/kg/day
+                                        </option>
+
+                                        <option value="custom">
+                                            Custom mL/kg/day
+                                        </option>
+
+                                    </select>
+
+                                </label>
+
+
+                                <div
+                                    id="custom-fluid-field"
+                                    hidden
+                                >
+
+                                    <label for="custom-fluid">
+                                        Custom Fluid
+
+                                        <input
+                                            id="custom-fluid"
+                                            name="custom_fluid_ml_per_kg"
+                                            type="number"
+                                            min="1"
+                                            max="200"
+                                            step="0.1"
+                                        >
+
+                                        <small>
+                                            mL/kg/day
+                                        </small>
+
+                                    </label>
+
+                                </div>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <!-- Clinical Information -->
+
+                        <fieldset>
+
+                            <legend>Clinical Information</legend>
+
+                            <div class="field-grid">
+
+
+                                <label for="pregnancy-status">
+                                    Pregnancy
+
+                                    <select
+                                        id="pregnancy-status"
+                                        name="pregnancy_status"
+                                    >
+
+                                        <option value="">
+                                            Not specified
+                                        </option>
+
+                                        <option value="no">
+                                            No
+                                        </option>
+
+                                        <option value="yes">
+                                            Yes
+                                        </option>
+
+                                    </select>
+
+                                </label>
+
+
+                                <label for="lactation-status">
+                                    Lactation
+
+                                    <select
+                                        id="lactation-status"
+                                        name="lactation_status"
+                                    >
+
+                                        <option value="">
+                                            Not specified
+                                        </option>
+
+                                        <option value="no">
+                                            No
+                                        </option>
+
+                                        <option value="yes">
+                                            Yes
+                                        </option>
+
+                                    </select>
+
+                                </label>
+
+
+                                <label for="dietary-preference">
+                                    Dietary Preference
+
+                                    <input
+                                        id="dietary-preference"
+                                        name="dietary_preference"
+                                        type="text"
+                                        placeholder="e.g. Vegetarian"
+                                    >
+                                </label>
+
+
+                                <label for="medical-condition">
+                                    Medical Condition
+
+                                    <input
+                                        id="medical-condition"
+                                        name="medical_condition"
+                                        type="text"
+                                        placeholder="e.g. Diabetes"
+                                    >
+                                </label>
+
+
+                                <label
+                                    for="medical-notes"
+                                    style="grid-column: 1 / -1;"
+                                >
+                                    Clinical Notes
+
+                                    <textarea
+                                        id="medical-notes"
+                                        name="medical_notes"
+                                        rows="4"
+                                        placeholder="Relevant clinical information..."
+                                    ></textarea>
+
+                                </label>
+
+                            </div>
+
+                        </fieldset>
+
+                    </div>
+
+                </details>
+
+
+                <!-- =================================================
+                     SUBMIT
+                     ================================================= -->
+
+                <div class="form-actions">
+
+                    <button
+                        class="button"
+                        type="submit"
+                    >
+                        Calculate Nutrition
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 RESULTS
+                 ===================================================== -->
+
+            <aside
+                id="result-panel"
+                class="card results-panel"
+                aria-live="polite"
+            >
+
+                <div class="results-header">
+
+                    <p class="eyebrow">
+                        PATIENT NUTRITION SUMMARY
+                    </p>
+
+                    <h2>
+                        Estimated Daily Needs
+                    </h2>
+
+                </div>
+
+
+                <div
+                    id="results-content"
+                    class="results-content"
+                >
+
+                    <p class="empty-state">
+                        Complete the assessment to calculate
+                        the patient's nutrition requirements.
+                    </p>
+
+                </div>
+
+            </aside>
+
+
+        </div>
+
+    </form>
+
+</main>
+
+{% endblock %}

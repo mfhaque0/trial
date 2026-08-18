@@ -1,0 +1,1028 @@
+/* static/js/script.js */
+
+document.addEventListener("DOMContentLoaded", () => {
+    initNavigation();
+    initCalculator();
+});
+
+// ============================================================================
+// PART 1: NAVIGATION MENU
+// ============================================================================
+function initNavigation() {
+    const menuToggle = document.querySelector(".menu-toggle");
+    const mainNav = document.querySelector("#main-nav");
+
+    if (!menuToggle || !mainNav) return;
+
+    function closeMenu() {
+        mainNav.classList.remove("active");
+        menuToggle.setAttribute("aria-expanded", "false");
+    }
+
+    function openMenu() {
+        mainNav.classList.add("active");
+        menuToggle.setAttribute("aria-expanded", "true");
+    }
+
+    // Toggle button click
+    menuToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
+        if (isExpanded) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+
+    // Close when clicking a navigation link
+    mainNav.addEventListener("click", (e) => {
+        if (e.target.tagName.toLowerCase() === "a") {
+            closeMenu();
+        }
+    });
+
+    // Close on Escape key press
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
+            if (isExpanded) {
+                closeMenu();
+                menuToggle.focus(); // Return focus for accessibility
+            }
+        }
+    });
+
+    // Close when clicking outside the navigation area
+    document.addEventListener("click", (e) => {
+        const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
+        if (isExpanded && !mainNav.contains(e.target) && e.target !== menuToggle) {
+            closeMenu();
+        }
+    });
+}
+
+// ============================================================================
+// PART 2: CALCULATOR LOGIC
+// ============================================================================
+function initCalculator() {
+    const form = document.querySelector("#calculator-form");
+    if (!form) return; // Exit cleanly if we are not on the calculator page
+
+    // Elements - Height
+    const heightUnit = document.querySelector("#height-unit");
+    const heightInput = document.querySelector("#height");
+    const heightSingle = document.querySelector("#height-single");
+    const heightFeet = document.querySelector("#height-feet");
+    const feetInput = document.querySelector("#feet");
+    const inchesInput = document.querySelector("#inches");
+
+    // Elements - Weight
+    const weightUnit = document.querySelector("#weight-unit");
+    const weightInput = document.querySelector("#weight");
+
+    // Elements - Macros
+    const macroModeInputs = document.querySelectorAll('input[name="macro-mode"]');
+    const macroInputsDiv = document.querySelector("#macro-inputs");
+    const proteinInput = document.querySelector("#protein");
+    const carbsInput = document.querySelector("#carbs");
+    const fatInput = document.querySelector("#fat");
+
+    // Elements - UI
+    const errorBox = document.querySelector("#calculator-error");
+    const resultPanel = document.querySelector("#result-panel");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    // ------------------------------------------------------------------------
+    // Utility functions
+    // ------------------------------------------------------------------------
+    function showError(message) {
+        if (!errorBox) return;
+        errorBox.textContent = message;
+        errorBox.classList.add("visible");
+    }
+
+    function clearError() {
+        if (!errorBox) return;
+        errorBox.textContent = "";
+        errorBox.classList.remove("visible");
+    }
+
+    function escapeHTML(str) {
+        if (typeof str !== "string") return str;
+        return str.replace(/[&<>'"]/g, tag => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;"
+        }[tag]));
+    }
+
+    // ------------------------------------------------------------------------
+    // Height Unit Switching & Conversion
+    // ------------------------------------------------------------------------
+    let previousHeightUnit = heightUnit ? heightUnit.value : "cm";
+
+    function updateHeightVisibility(unit) {
+        if (!heightSingle || !heightFeet || !heightInput || !feetInput) return;
+
+        if (unit === "ft_in") {
+            heightSingle.hidden = true;
+            heightFeet.hidden = false;
+            heightInput.required = false;
+            feetInput.required = true;
+            feetInput.placeholder = "e.g. 5";
+            if (inchesInput) inchesInput.placeholder = "e.g. 3";
+        } else {
+            heightSingle.hidden = false;
+            heightFeet.hidden = true;
+            heightInput.required = true;
+            feetInput.required = false;
+
+            if (unit === "cm") heightInput.placeholder = "e.g. 165";
+            else if (unit === "m") heightInput.placeholder = "e.g. 1.65";
+            else if (unit === "in") heightInput.placeholder = "e.g. 65";
+        }
+    }
+
+    function convertHeight(oldUnit, newUnit) {
+        if (oldUnit === newUnit) return;
+        if (!heightInput || !feetInput || !inchesInput) return;
+
+        let cmValue = null;
+
+        // Parse current value into cm
+        if (oldUnit === "ft_in") {
+            const f = parseFloat(feetInput.value);
+            const i = parseFloat(inchesInput.value) || 0;
+            if (!isNaN(f)) {
+                cmValue = (f * 12 + i) * 2.54;
+            }
+        } else {
+            const val = parseFloat(heightInput.value);
+            if (!isNaN(val)) {
+                if (oldUnit === "cm") cmValue = val;
+                else if (oldUnit === "m") cmValue = val * 100;
+                else if (oldUnit === "in") cmValue = val * 2.54;
+            }
+        }
+
+        // Convert cm to the new unit
+        if (cmValue !== null) {
+            if (newUnit === "ft_in") {
+                const totalInches = cmValue / 2.54;
+                const f = Math.floor(totalInches / 12);
+                const i = totalInches - (f * 12);
+                feetInput.value = f;
+                inchesInput.value = (Math.round(i * 10) / 10).toString();
+            } else {
+                let outValue = cmValue;
+                if (newUnit === "m") outValue = cmValue / 100;
+                else if (newUnit === "in") outValue = cmValue / 2.54;
+                heightInput.value = (Math.round(outValue * 100) / 100).toString();
+            }
+        }
+    }
+
+    if (heightUnit) {
+        // Run once on load to ensure correct initial state without triggering conversions
+        updateHeightVisibility(heightUnit.value);
+
+        heightUnit.addEventListener("change", (e) => {
+            const newUnit = e.target.value;
+            convertHeight(previousHeightUnit, newUnit);
+            updateHeightVisibility(newUnit);
+            previousHeightUnit = newUnit;
+        });
+    }
+
+    // ------------------------------------------------------------------------
+    // Weight Unit Switching & Conversion
+    // ------------------------------------------------------------------------
+    let previousWeightUnit = weightUnit ? weightUnit.value : "kg";
+
+    function updateWeightVisibility(unit) {
+        if (!weightInput) return;
+        if (unit === "kg") weightInput.placeholder = "e.g. 65";
+        else if (unit === "lb") weightInput.placeholder = "e.g. 143";
+    }
+
+    function convertWeight(oldUnit, newUnit) {
+        if (oldUnit === newUnit || !weightInput) return;
+
+        const val = parseFloat(weightInput.value);
+        if (isNaN(val)) return;
+
+        let converted = val;
+        if (oldUnit === "kg" && newUnit === "lb") converted = val * 2.2046226218;
+        else if (oldUnit === "lb" && newUnit === "kg") converted = val * 0.45359237;
+
+        weightInput.value = (Math.round(converted * 100) / 100).toString();
+    }
+
+    if (weightUnit) {
+        updateWeightVisibility(weightUnit.value);
+
+        weightUnit.addEventListener("change", (e) => {
+            const newUnit = e.target.value;
+            convertWeight(previousWeightUnit, newUnit);
+            updateWeightVisibility(newUnit);
+            previousWeightUnit = newUnit;
+        });
+    }
+
+    // ------------------------------------------------------------------------
+    // Macro Target Mode
+    // ------------------------------------------------------------------------
+    function updateMacroMode() {
+        if (!macroInputsDiv) return;
+
+        const selectedMacro = document.querySelector(
+            'input[name="macro-mode"]:checked'
+        );
+
+        if (!selectedMacro) {
+            macroInputsDiv.hidden = true;
+            return;
+        }
+
+        macroInputsDiv.hidden = selectedMacro.value !== "custom";
+    }
+
+    macroModeInputs.forEach(radio => {
+        radio.addEventListener("change", updateMacroMode);
+    });
+
+    updateMacroMode();
+
+    // Clear errors when the user starts interacting with the form again
+    form.addEventListener("input", clearError);
+
+    // ------------------------------------------------------------------------
+    // Form Submission & API Call
+    // ------------------------------------------------------------------------
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        // Safe reads
+        const ageInput = document.querySelector("#age");
+        const sexInput = document.querySelector("#sex");
+        const goalInput = document.querySelector("#goal");
+        const activityRadio = document.querySelector('input[name="activity"]:checked');
+        const macroRadio = document.querySelector('input[name="macro-mode"]:checked');
+
+        // Validation - Activity
+        if (!activityRadio) {
+            showError("Please select an activity level.");
+            return;
+        }
+
+        // Validation - Macro Selection
+        if (!macroRadio) {
+            showError("Please select a macro preference.");
+            return;
+        }
+
+        // Handle Macros
+        const isCustomMacro = (macroRadio.value === "custom");
+        let payloadMacros = { protein: 25, carbs: 45, fat: 30 };
+
+        if (isCustomMacro) {
+            const p = parseFloat(proteinInput ? proteinInput.value : 0) || 0;
+            const c = parseFloat(carbsInput ? carbsInput.value : 0) || 0;
+            const f = parseFloat(fatInput ? fatInput.value : 0) || 0;
+
+            if (Math.abs((p + c + f) - 100) > 0.01) {
+                showError("Your custom macros must total exactly 100%.");
+                return;
+            }
+            payloadMacros = { protein: p, carbs: c, fat: f };
+        }
+
+        // Final sanity check for primary inputs before sending
+        if (heightUnit && heightUnit.value === "ft_in") {
+            if (!feetInput || !feetInput.value) {
+                showError("Please enter your height in feet.");
+                return;
+            }
+        } else {
+            if (!heightInput || !heightInput.value) {
+                showError("Please enter your height.");
+                return;
+            }
+        }
+
+        if (!weightInput || !weightInput.value) {
+            showError("Please enter your weight.");
+            return;
+        }
+
+        // Construct Request Payload
+        const payload = {
+            age: ageInput ? ageInput.value : null,
+            sex: sexInput ? sexInput.value : null,
+            goal: goalInput ? goalInput.value : null,
+
+            height_unit: heightUnit ? heightUnit.value : "cm",
+            height: heightInput ? heightInput.value : null,
+            feet: feetInput ? feetInput.value : null,
+            inches: inchesInput ? inchesInput.value : null,
+
+            weight_unit: weightUnit ? weightUnit.value : "kg",
+            weight: weightInput ? weightInput.value : null,
+
+            activity: activityRadio.value,
+            custom_macros: isCustomMacro,
+            macros: payloadMacros
+        };
+
+        // UI Loading State
+        const originalButtonText = submitButton.textContent;
+        submitButton.textContent = "Calculating...";
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch("/api/assessments/calculate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Unable to calculate nutrition estimates at this time.");
+            }
+
+            renderResults(data);
+
+        } catch (error) {
+            showError(error.message || "An unexpected error occurred.");
+        } finally {
+            submitButton.textContent = originalButtonText;
+            submitButton.disabled = false;
+        }
+    });
+
+    // ------------------------------------------------------------------------
+    // Result Rendering (Premium UI Dashboard)
+    // ------------------------------------------------------------------------
+    function renderResults(data) {
+        if (!resultPanel) return;
+
+        // Clean up the category name if it has extra text
+        const bmiCategoryText = data.bmi && data.bmi.category ? data.bmi.category : "";
+        const bmiCategory = bmiCategoryText.replace(" (Severe)", "").trim();
+        const safeBMICategory = escapeHTML(bmiCategory);
+
+        // Dynamic BMI styling logic
+        const bmiVal = data.bmi ? data.bmi.value : 0;
+        let bmiColor = "#dc2626"; // Default/Class 3
+        let bmiBg = "#fef2f2";
+        let markerPos = Math.max(0, Math.min(100, ((bmiVal - 15) / (45 - 15)) * 100)); // Scale roughly 15 to 45
+
+        if (bmiVal < 18.5) { bmiColor = "#2563eb"; bmiBg = "#eff6ff"; }
+        else if (bmiVal < 25) { bmiColor = "#16a34a"; bmiBg = "#f0fdf4"; }
+        else if (bmiVal < 30) { bmiColor = "#eab308"; bmiBg = "#fefce8"; }
+        else if (bmiVal < 35) { bmiColor = "#ea580c"; bmiBg = "#fff7ed"; }
+        else if (bmiVal < 40) { bmiColor = "#ef4444"; bmiBg = "#fef2f2"; }
+
+        // FOOLPROOF WARNING LOGIC (Handles both strings and objects securely)
+        let warningsHTML = "";
+        if (data.warnings && Array.isArray(data.warnings) && data.warnings.length > 0) {
+            warningsHTML = data.warnings.map(w => {
+                const msgText = typeof w === "string" ? w : (w.message || "Please review your inputs.");
+                return `
+                <div class="premium-alert premium-warning">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <div>
+                        <strong>Review needed</strong>
+                        <p>${escapeHTML(msgText)}</p>
+                    </div>
+                </div>`;
+            }).join("");
+        }
+
+        resultPanel.innerHTML = `
+            <div class="results-header">
+                <p class="eyebrow">YOUR NUTRITION SNAPSHOT</p>
+                <h2>Estimated daily needs</h2>
+            </div>
+
+            <div class="premium-grid">
+                <article class="metric-card" style="border-color: ${bmiColor}40;">
+                    <div class="icon-wrapper" style="background: ${bmiBg}; color: ${bmiColor};">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                    </div>
+                    <span class="metric-label" style="color: ${bmiColor};">BMI</span>
+                    <strong class="metric-value" style="color: ${bmiColor};">${bmiVal.toFixed(1)}</strong>
+                    <div class="bmi-badge" style="background: ${bmiColor};">${safeBMICategory}</div>
+                    
+                    <div class="bmi-scale-container">
+                        <div class="bmi-marker" style="left: ${markerPos}%; border-top-color: ${bmiColor};"></div>
+                        <div class="bmi-scale-bar"></div>
+                        <div class="bmi-scale-labels">
+                            <span>18.5</span><span>25</span><span>30</span><span>35</span><span>40</span>
+                        </div>
+                    </div>
+                    <small style="margin-top:4px; color: var(--muted);">BMI (kg/m²)</small>
+                </article>
+
+                <article class="metric-card bmr-card">
+                    <div class="icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 16.121A3 3 0 1012.015 11L11 14h1v3z"></path></svg>
+                    </div>
+                    <span class="metric-label">BMR</span>
+                    <strong class="metric-value">${data.bmr}</strong>
+                    <small>kcal/day</small>
+                    <div class="metric-footer">
+                        <div class="footer-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                        <span>Calories your body burns at rest</span>
+                    </div>
+                </article>
+
+                <article class="metric-card tdee-card">
+                    <div class="icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    </div>
+                    <span class="metric-label">MAINTENANCE</span>
+                    <strong class="metric-value">${data.tdee}</strong>
+                    <small>kcal/day · TDEE</small>
+                    <div class="metric-footer">
+                        <div class="footer-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
+                        <span>Estimated calories to maintain weight</span>
+                    </div>
+                </article>
+
+                <article class="metric-card target-card">
+                    <div class="icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"></path></svg>
+                    </div>
+                    <span class="metric-label">DAILY TARGET</span>
+                    <strong class="metric-value">${data.target}</strong>
+                    <small>kcal/day · estimated</small>
+                    <div class="metric-footer">
+                        <div class="footer-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg></div>
+                        <span>Recommended daily intake</span>
+                    </div>
+                </article>
+            </div>
+
+            ${warningsHTML}
+
+            <div class="premium-alert premium-info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p>These are estimates for adults and are not medical advice.<br>BMI is a screening measure, not a complete assessment of health.</p>
+            </div>
+
+            <h3 class="section-title">Macro guide</h3>
+            <div class="macro-grid">
+                <article class="macro-card protein-card">
+                    <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                    <span class="metric-label">PROTEIN</span>
+                    <strong class="metric-value">${data.macros.protein.grams} g</strong>
+                    <small>${data.macros.protein.percent}% of daily target</small>
+                    <div class="progress-track"><div class="progress-fill" style="width: ${data.macros.protein.percent}%;"></div></div>
+                </article>
+
+                <article class="macro-card carbs-card">
+                    <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                    <span class="metric-label">CARBOHYDRATES</span>
+                    <strong class="metric-value">${data.macros.carbs.grams} g</strong>
+                    <small>${data.macros.carbs.percent}% of daily target</small>
+                    <div class="progress-track"><div class="progress-fill" style="width: ${data.macros.carbs.percent}%;"></div></div>
+                </article>
+
+                <article class="macro-card fat-card">
+                    <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
+                    <span class="metric-label">FAT</span>
+                    <strong class="metric-value">${data.macros.fat.grams} g</strong>
+                    <small>${data.macros.fat.percent}% of daily target</small>
+                    <div class="progress-track"><div class="progress-fill" style="width: ${data.macros.fat.percent}%;"></div></div>
+                </article>
+            </div>
+
+            <div class="water-banner">
+                <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg></div>
+                <div class="water-text">
+                    <span class="metric-label">Fluid estimate</span>
+                    <strong class="metric-value">${data.water_litres.toFixed(1)} L/day</strong>
+                </div>
+                <p>A general weight-based estimate. Actual needs vary with activity, climate, health conditions and clinical guidance.</p>
+            </div>
+
+            <div class="legend-card">
+                <span class="legend-title">BMI CATEGORY GUIDE</span>
+                <div class="legend-items">
+                    <div><span class="dot" style="background:#2563eb;"></span><b>Underweight</b><small>&lt; 18.5</small></div>
+                    <div><span class="dot" style="background:#16a34a;"></span><b>Healthy weight</b><small>18.5 – 24.9</small></div>
+                    <div><span class="dot" style="background:#eab308;"></span><b>Overweight</b><small>25 – 29.9</small></div>
+                    <div><span class="dot" style="background:#f97316;"></span><b>Obesity (Class 1)</b><small>30 – 34.9</small></div>
+                    <div><span class="dot" style="background:#ea580c;"></span><b>Obesity (Class 2)</b><small>35 – 39.9</small></div>
+                    <div><span class="dot" style="background:#dc2626;"></span><b>Obesity (Class 3)</b><small>&ge; 40</small></div>
+                </div>
+            </div>
+        `;
+
+        resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+}
+
+/* ============================================================
+   IFCT 2017 FOOD DATABASE
+   ============================================================ */
+
+(() => {
+    const searchInput = document.getElementById("ifct-search");
+    const categorySelect = document.getElementById("ifct-category");
+    const resultsContainer = document.getElementById("ifct-results");
+
+    if (!searchInput || !categorySelect || !resultsContainer) {
+        return;
+    }
+
+    let searchTimer = null;
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function formatNumber(value) {
+        if (value === null || value === undefined || value === "") {
+            return "—";
+        }
+
+        const number = Number(value);
+
+        if (!Number.isFinite(number)) {
+            return "—";
+        }
+
+        return number.toFixed(2).replace(/\.00$/, "");
+    }
+
+    function renderResults(foods) {
+        if (!foods.length) {
+            resultsContainer.innerHTML = `
+            <div class="ifct-status">
+                No IFCT foods found.
+            </div>
+        `;
+            return;
+        }
+
+        resultsContainer.innerHTML = foods.map(food => `
+        <div class="ifct-food-row">
+
+            <div>
+                <div class="ifct-food-name">
+                    ${escapeHtml(food.name)}
+                </div>
+
+                <div class="ifct-food-meta">
+                    ${escapeHtml(food.source_food_code || "")}
+                    ·
+                    ${escapeHtml(food.category || "Uncategorized")}
+                </div>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>${formatNumber(food.calories)}</strong>
+                <small>kcal</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>${formatNumber(food.protein)}</strong>
+                <small>protein g</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>${formatNumber(food.carbohydrates)}</strong>
+                <small>carbs g</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>${formatNumber(food.fat)}</strong>
+                <small>fat g</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>${formatNumber(food.fiber)}</strong>
+                <small>fibre g</small>
+            </div>
+
+            <div class="ifct-food-action">
+                <button
+                    type="button"
+                    class="button ifct-details-button"
+                    data-food-id="${food.id}"
+                >
+                    View details
+                </button>
+            </div>
+
+        </div>
+    `).join("");
+
+        resultsContainer
+            .querySelectorAll(".ifct-details-button")
+            .forEach(button => {
+                button.addEventListener("click", () => {
+                    const foodId = button.dataset.foodId;
+
+                    if (foodId) {
+                        loadFoodDetails(foodId);
+                    }
+                });
+            });
+    }
+
+    async function loadFoodDetails(foodId) {
+        resultsContainer.innerHTML = `
+            <div class="ifct-status">
+                Loading complete IFCT details...
+            </div>
+        `;
+
+        try {
+            const response = await fetch(
+                `/api/foods/${encodeURIComponent(foodId)}`,
+                {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(
+                    data.error || `HTTP ${response.status}`
+                );
+            }
+
+            const data = await response.json();
+
+            renderFoodDetails(
+                data.food,
+                data.components || []
+            );
+
+        } catch (error) {
+            console.error(
+                "IFCT food details failed:",
+                error
+            );
+
+            resultsContainer.innerHTML = `
+                <div class="ifct-status">
+                    Unable to load food details.
+                    Please try again.
+                </div>
+            `;
+        }
+    }
+
+    function renderFoodDetails(food, components) {
+        const grouped = {};
+
+        for (const component of components) {
+            const category = component.category || "other";
+
+            if (!grouped[category]) {
+                grouped[category] = [];
+            }
+
+            grouped[category].push(component);
+        }
+
+        const categoryLabels = {
+            proximate: "Proximate Composition",
+            energy: "Energy",
+            carbohydrate: "Carbohydrate",
+            dietary_fibre: "Dietary Fibre",
+            oligosaccharide: "Oligosaccharides",
+            phytate: "Phytate",
+            phytosterol: "Phytosterols",
+            saponin: "Saponins",
+            fatty_acid: "Fatty Acids",
+            other: "Other Components"
+        };
+
+        const categoryOrder = [
+            "proximate",
+            "energy",
+            "carbohydrate",
+            "dietary_fibre",
+            "oligosaccharide",
+            "phytate",
+            "phytosterol",
+            "saponin",
+            "fatty_acid",
+            "other"
+        ];
+
+        const sections = categoryOrder
+            .filter(category => grouped[category]?.length)
+            .map(category => `
+                <section class="ifct-detail-section">
+
+                    <h3>
+                        ${escapeHtml(
+                            categoryLabels[category] || category
+                        )}
+                    </h3>
+
+                    <div class="ifct-component-grid">
+
+                        ${grouped[category].map(component => {
+
+                            const belowLimit =
+                                component.measurement_status ===
+                                "below_detection_limit";
+
+                            let value = "—";
+
+                            if (belowLimit) {
+                                value = "Below detectable limit";
+                            } else if (
+                                component.value !== null &&
+                                component.value !== undefined
+                            ) {
+                                value = formatNumber(
+                                    component.value
+                                );
+
+                                if (
+                                    component.standard_deviation !== null &&
+                                    component.standard_deviation !== undefined
+                                ) {
+                                    value +=
+                                        ` ± ${formatNumber(
+                                            component.standard_deviation
+                                        )}`;
+                                }
+                            }
+
+                            return `
+                                <div class="ifct-component">
+
+                                    <div>
+                                        <strong>
+                                            ${escapeHtml(
+                                                component.name
+                                            )}
+                                        </strong>
+
+                                        <small>
+                                            ${escapeHtml(
+                                                component.code || ""
+                                            )}
+                                        </small>
+                                    </div>
+
+                                    <div class="ifct-component-value">
+                                        <strong>
+                                            ${escapeHtml(value)}
+                                        </strong>
+
+                                        ${
+                                            belowLimit
+                                                ? ""
+                                                : `<small>${escapeHtml(
+                                                    component.unit || ""
+                                                )}</small>`
+                                        }
+                                    </div>
+
+                                </div>
+                            `;
+                        }).join("")}
+
+                    </div>
+
+                </section>
+            `)
+            .join("");
+
+        resultsContainer.innerHTML = `
+            <div class="ifct-detail-card">
+
+                <div class="ifct-detail-header">
+
+                    <div>
+                        <p class="eyebrow">
+                            ICMR-NIN IFCT 2017
+                        </p>
+
+                        <h2>
+                            ${escapeHtml(food.name)}
+                        </h2>
+
+                        <p class="ifct-food-meta">
+                            ${escapeHtml(
+                                food.source_food_code || ""
+                            )}
+                            ·
+                            ${escapeHtml(
+                                food.category || "Uncategorized"
+                            )}
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="button ifct-back-button"
+                        id="ifct-back-to-results"
+                    >
+                        Back to results
+                    </button>
+
+                </div>
+
+                <div class="ifct-basic-grid">
+
+                    <div class="ifct-nutrient">
+                        <strong>${formatNumber(food.calories)}</strong>
+                        <small>kcal</small>
+                    </div>
+
+                    <div class="ifct-nutrient">
+                        <strong>${formatNumber(food.protein)}</strong>
+                        <small>protein g</small>
+                    </div>
+
+                    <div class="ifct-nutrient">
+                        <strong>${formatNumber(food.carbohydrates)}</strong>
+                        <small>carbs g</small>
+                    </div>
+
+                    <div class="ifct-nutrient">
+                        <strong>${formatNumber(food.fat)}</strong>
+                        <small>fat g</small>
+                    </div>
+
+                    <div class="ifct-nutrient">
+                        <strong>${formatNumber(food.fiber)}</strong>
+                        <small>fibre g</small>
+                    </div>
+
+                </div>
+
+                ${sections || `
+                    <div class="ifct-status">
+                        No additional component data reported.
+                    </div>
+                `}
+
+                <div class="ifct-source-note">
+                    Source:
+                    ${escapeHtml(
+                        food.source_name ||
+                        "ICMR-NIN IFCT 2017"
+                    )}
+
+                    ${
+                        food.source_version
+                            ? ` · ${escapeHtml(
+                                food.source_version
+                            )}`
+                            : ""
+                    }
+
+                    ${
+                        food.regions_count
+                            ? ` · ${escapeHtml(
+                                String(food.regions_count)
+                            )} regions`
+                            : ""
+                    }
+                </div>
+
+            </div>
+        `;
+
+        const backButton =
+            document.getElementById(
+                "ifct-back-to-results"
+            );
+
+        if (backButton) {
+            backButton.addEventListener(
+                "click",
+                loadFoods
+            );
+        }
+    }
+
+    async function loadFoods() {
+        const query = searchInput.value.trim();
+        const category = categorySelect.value;
+
+        resultsContainer.innerHTML = `
+            <div class="ifct-status">
+                Searching IFCT database...
+            </div>
+        `;
+
+        try {
+            const params = new URLSearchParams();
+
+            if (query) {
+                params.set("q", query);
+            }
+
+            if (category) {
+                params.set("category", category);
+            }
+
+            params.set("limit", "100");
+
+            const response = await fetch(
+                `/api/foods?${params.toString()}`,
+                {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            renderResults(data.foods || []);
+
+        } catch (error) {
+            console.error("IFCT food search failed:", error);
+
+            resultsContainer.innerHTML = `
+                <div class="ifct-status">
+                    Unable to load the IFCT food database.
+                    Please try again.
+                </div>
+            `;
+        }
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetch("/api/foods?limit=100");
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            const categories = [
+                ...new Set(
+                    (data.foods || [])
+                        .map(food => food.category)
+                        .filter(Boolean)
+                )
+            ].sort();
+
+            for (const category of categories) {
+                const option = document.createElement("option");
+
+                option.value = category;
+                option.textContent = category;
+
+                categorySelect.appendChild(option);
+            }
+
+        } catch (error) {
+            console.error(
+                "Unable to load IFCT categories:",
+                error
+            );
+        }
+    }
+
+    searchInput.addEventListener("input", () => {
+        clearTimeout(searchTimer);
+
+        searchTimer = setTimeout(
+            loadFoods,
+            300
+        );
+    });
+
+    categorySelect.addEventListener(
+        "change",
+        loadFoods
+    );
+
+    loadCategories();
+
+})();

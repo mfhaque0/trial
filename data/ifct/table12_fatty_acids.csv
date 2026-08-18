@@ -1,0 +1,15 @@
+source_food_code,source_food_name,regions_count,f4d0_butyric,f6d0_caproic,f8d0_caprylic,f10d0_capric,f12d0_lauric,f14d0_myristic,f16d0_palmitic,f18d0_stearic,f20d0_arachidic,f22d0_behenic,f24d0_lignoceric
+T001,Coconut oil,6,,,2.76,5.18,49.57,21.12,9.26,2.97,,,
+T002,Corn oil,1,,,,,,,12.94,2.12,0.68,0.39,0.47
+T003,Cotton seed oil,1,,,,,,0.91,23.4,2.79,0.42,0.34,0.31
+T004,Gingelly oil,6,,,,,,,9.34,5.75,0.67,0.25,0.22
+T005,Groundnut oil,5,,,,,,,10.27,3.38,1.39,2.66,1.25
+T006,Mustard oil,6,,,,,,,2.18,1.17,0.98,1.39,
+T007,Palm oil,4,,,,,,,39.79,4.24,,,
+T008,Rice bran oil,5,,,,,,0.29,19.51,2.03,1.03,0.33,0.51
+T009,Safflower oil,3,,,,,,0.18,6.24,2.35,0.26,0.17,
+T010,Safflower oil (blended),4,,,,,,,15.71,2.28,0.83,0.31,0.4
+T011,Soyabean oil,6,,,,,,,11.51,4.08,0.37,,
+T012,Sunflower oil,6,,,,,,,6.43,3.69,0.32,0.66,0.29
+T013,Ghee,6,,0.3,0.47,1.87,2.81,11.81,39.13,13.89,0.52,,
+T014,Vanaspati,6,,,,,0.37,1.19,53.1,5.98,0.81,,
