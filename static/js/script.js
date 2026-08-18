@@ -870,171 +870,190 @@ function initCalculator() {
     `;
     }
 
-    
+
 
     // Bind "View details" buttons rendered directly in the
     // server-side "Your database" table.
     function bindStaticFoodDetailButtons() {
-    document
-        .querySelectorAll(".ifct-details-button")
-        .forEach(button => {
-            if (button.dataset.detailsBound === "true") {
-                return;
-            }
-
-            button.dataset.detailsBound = "true";
-
-            button.addEventListener("click", () => {
-                const foodId = button.dataset.foodId;
-
-                if (foodId) {
-                    loadFoodDetails(foodId);
+        document
+            .querySelectorAll(".ifct-details-button")
+            .forEach(button => {
+                if (button.dataset.detailsBound === "true") {
+                    return;
                 }
-            });
-        });
-}
 
-async function loadFoodDetails(foodId) {
-    resultsContainer.innerHTML = `
+                button.dataset.detailsBound = "true";
+
+                button.addEventListener("click", () => {
+                    const foodId = button.dataset.foodId;
+
+                    if (foodId) {
+                        loadFoodDetails(foodId);
+                    }
+                });
+            });
+    }
+
+    async function loadFoodDetails(foodId) {
+        resultsContainer.innerHTML = `
             <div class="ifct-status">
                 Loading complete IFCT details...
             </div>
         `;
 
-    try {
-        const response = await fetch(
-            `/api/foods/${encodeURIComponent(foodId)}`,
-            {
-                headers: {
-                    "Accept": "application/json"
+        try {
+            const response = await fetch(
+                `/api/foods/${encodeURIComponent(foodId)}`,
+                {
+                    headers: {
+                        "Accept": "application/json"
+                    }
                 }
-            }
-        );
-
-        if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            throw new Error(
-                data.error || `HTTP ${response.status}`
             );
-        }
 
-        const data = await response.json();
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(
+                    data.error || `HTTP ${response.status}`
+                );
+            }
 
-        renderFoodDetails(
-            data.food,
-            data.components || []
-        );
+            const data = await response.json();
 
-    } catch (error) {
-        console.error(
-            "IFCT food details failed:",
-            error
-        );
+            renderFoodDetails(
+                data.food,
+                data.components || []
+            );
+            requestAnimationFrame(() => {
+                const detailCard = resultsContainer.querySelector(
+                    ".ifct-detail-card"
+                );
 
-        resultsContainer.innerHTML = `
+                if (detailCard) {
+                    const headerOffset = 100;
+
+                    const targetPosition =
+                        detailCard.getBoundingClientRect().top +
+                        window.scrollY -
+                        headerOffset;
+
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: "smooth"
+                    });
+                }
+            });
+
+        } catch (error) {
+            console.error(
+                "IFCT food details failed:",
+                error
+            );
+
+            resultsContainer.innerHTML = `
                 <div class="ifct-status">
                     Unable to load food details.
                     Please try again.
                 </div>
             `;
+        }
     }
-}
 
-function renderFoodDetails(food, components) {
-    const grouped = {};
+    function renderFoodDetails(food, components) {
+        const grouped = {};
 
-    for (const component of components) {
-        const category = component.category || "other";
+        for (const component of components) {
+            const category = component.category || "other";
 
-        if (!grouped[category]) {
-            grouped[category] = [];
+            if (!grouped[category]) {
+                grouped[category] = [];
+            }
+
+            grouped[category].push(component);
         }
 
-        grouped[category].push(component);
-    }
+        const categoryLabels = {
+            proximate: "Proximate Composition",
+            energy: "Energy",
+            carbohydrate: "Carbohydrate",
+            dietary_fibre: "Dietary Fibre",
+            oligosaccharide: "Oligosaccharides",
+            phytate: "Phytate",
+            phytosterol: "Phytosterols",
+            saponin: "Saponins",
+            fatty_acid: "Fatty Acids",
+            other: "Other Components"
+        };
 
-    const categoryLabels = {
-        proximate: "Proximate Composition",
-        energy: "Energy",
-        carbohydrate: "Carbohydrate",
-        dietary_fibre: "Dietary Fibre",
-        oligosaccharide: "Oligosaccharides",
-        phytate: "Phytate",
-        phytosterol: "Phytosterols",
-        saponin: "Saponins",
-        fatty_acid: "Fatty Acids",
-        other: "Other Components"
-    };
+        const categoryOrder = [
+            "proximate",
+            "energy",
+            "carbohydrate",
+            "dietary_fibre",
+            "oligosaccharide",
+            "phytate",
+            "phytosterol",
+            "saponin",
+            "fatty_acid",
+            "other"
+        ];
 
-    const categoryOrder = [
-        "proximate",
-        "energy",
-        "carbohydrate",
-        "dietary_fibre",
-        "oligosaccharide",
-        "phytate",
-        "phytosterol",
-        "saponin",
-        "fatty_acid",
-        "other"
-    ];
-
-    const sections = categoryOrder
-        .filter(category => grouped[category]?.length)
-        .map(category => `
+        const sections = categoryOrder
+            .filter(category => grouped[category]?.length)
+            .map(category => `
                 <section class="ifct-detail-section">
 
                     <h3>
                         ${escapeHtml(
-            categoryLabels[category] || category
-        )}
+                categoryLabels[category] || category
+            )}
                     </h3>
 
                     <div class="ifct-component-grid">
 
                         ${grouped[category].map(component => {
 
-            const belowLimit =
-                component.measurement_status ===
-                "below_detection_limit";
+                const belowLimit =
+                    component.measurement_status ===
+                    "below_detection_limit";
 
-            let value = "—";
+                let value = "—";
 
-            if (belowLimit) {
-                value = "Below detectable limit";
-            } else if (
-                component.value !== null &&
-                component.value !== undefined
-            ) {
-                value = formatNumber(
-                    component.value
-                );
-
-                if (
-                    component.standard_deviation !== null &&
-                    component.standard_deviation !== undefined
+                if (belowLimit) {
+                    value = "Below detectable limit";
+                } else if (
+                    component.value !== null &&
+                    component.value !== undefined
                 ) {
-                    value +=
-                        ` ± ${formatNumber(
-                            component.standard_deviation
-                        )}`;
-                }
-            }
+                    value = formatNumber(
+                        component.value
+                    );
 
-            return `
+                    if (
+                        component.standard_deviation !== null &&
+                        component.standard_deviation !== undefined
+                    ) {
+                        value +=
+                            ` ± ${formatNumber(
+                                component.standard_deviation
+                            )}`;
+                    }
+                }
+
+                return `
                                 <div class="ifct-component">
 
                                     <div>
                                         <strong>
                                             ${escapeHtml(
-                component.name
-            )}
+                    component.name
+                )}
                                         </strong>
 
                                         <small>
                                             ${escapeHtml(
-                component.code || ""
-            )}
+                    component.code || ""
+                )}
                                         </small>
                                     </div>
 
@@ -1044,24 +1063,24 @@ function renderFoodDetails(food, components) {
                                         </strong>
 
                                         ${belowLimit
-                    ? ""
-                    : `<small>${escapeHtml(
-                        component.unit || ""
-                    )}</small>`
-                }
+                        ? ""
+                        : `<small>${escapeHtml(
+                            component.unit || ""
+                        )}</small>`
+                    }
                                     </div>
 
                                 </div>
                             `;
-        }).join("")}
+            }).join("")}
 
                     </div>
 
                 </section>
             `)
-        .join("");
+            .join("");
 
-    resultsContainer.innerHTML = `
+        resultsContainer.innerHTML = `
             <div class="ifct-detail-card">
 
                 <div class="ifct-detail-header">
@@ -1077,12 +1096,12 @@ function renderFoodDetails(food, components) {
 
                         <p class="ifct-food-meta">
                             ${escapeHtml(
-        food.source_food_code || ""
-    )}
+            food.source_food_code || ""
+        )}
                             ·
                             ${escapeHtml(
-        food.category || "Uncategorized"
-    )}
+            food.category || "Uncategorized"
+        )}
                         </p>
                     </div>
 
@@ -1134,145 +1153,145 @@ function renderFoodDetails(food, components) {
                 <div class="ifct-source-note">
                     Source:
                     ${escapeHtml(
-        food.source_name ||
-        "ICMR-NIN IFCT 2017"
-    )}
+            food.source_name ||
+            "ICMR-NIN IFCT 2017"
+        )}
 
                     ${food.source_version
-            ? ` · ${escapeHtml(
-                food.source_version
-            )}`
-            : ""
-        }
+                ? ` · ${escapeHtml(
+                    food.source_version
+                )}`
+                : ""
+            }
 
                     ${food.regions_count
-            ? ` · ${escapeHtml(
-                String(food.regions_count)
-            )} regions`
-            : ""
-        }
+                ? ` · ${escapeHtml(
+                    String(food.regions_count)
+                )} regions`
+                : ""
+            }
                 </div>
 
             </div>
         `;
 
-    const backButton =
-        document.getElementById(
-            "ifct-back-to-results"
-        );
+        const backButton =
+            document.getElementById(
+                "ifct-back-to-results"
+            );
 
-    if (backButton) {
-        backButton.addEventListener(
-            "click",
-            loadFoods
-        );
+        if (backButton) {
+            backButton.addEventListener(
+                "click",
+                loadFoods
+            );
+        }
     }
-}
 
-// Bind buttons already rendered by templates/foods.html.
-bindStaticFoodDetailButtons();
+    // Bind buttons already rendered by templates/foods.html.
+    bindStaticFoodDetailButtons();
 
-async function loadFoods() {
-    const query = searchInput.value.trim();
-    const category = categorySelect.value;
+    async function loadFoods() {
+        const query = searchInput.value.trim();
+        const category = categorySelect.value;
 
-    resultsContainer.innerHTML = `
+        resultsContainer.innerHTML = `
             <div class="ifct-status">
                 Searching IFCT database...
             </div>
         `;
 
-    try {
-        const params = new URLSearchParams();
+        try {
+            const params = new URLSearchParams();
 
-        if (query) {
-            params.set("q", query);
-        }
-
-        if (category) {
-            params.set("category", category);
-        }
-
-        params.set("limit", "100");
-
-        const response = await fetch(
-            `/api/foods?${params.toString()}`,
-            {
-                headers: {
-                    "Accept": "application/json"
-                }
+            if (query) {
+                params.set("q", query);
             }
-        );
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
+            if (category) {
+                params.set("category", category);
+            }
 
-        const data = await response.json();
+            params.set("limit", "100");
 
-        renderResults(data.foods || []);
+            const response = await fetch(
+                `/api/foods?${params.toString()}`,
+                {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
 
-    } catch (error) {
-        console.error("IFCT food search failed:", error);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
 
-        resultsContainer.innerHTML = `
+            const data = await response.json();
+
+            renderResults(data.foods || []);
+
+        } catch (error) {
+            console.error("IFCT food search failed:", error);
+
+            resultsContainer.innerHTML = `
                 <div class="ifct-status">
                     Unable to load the IFCT food database.
                     Please try again.
                 </div>
             `;
+        }
     }
-}
 
-async function loadCategories() {
-    try {
-        const response = await fetch("/api/foods?limit=100");
+    async function loadCategories() {
+        try {
+            const response = await fetch("/api/foods?limit=100");
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            const categories = [
+                ...new Set(
+                    (data.foods || [])
+                        .map(food => food.category)
+                        .filter(Boolean)
+                )
+            ].sort();
+
+            for (const category of categories) {
+                const option = document.createElement("option");
+
+                option.value = category;
+                option.textContent = category;
+
+                categorySelect.appendChild(option);
+            }
+
+        } catch (error) {
+            console.error(
+                "Unable to load IFCT categories:",
+                error
+            );
         }
+    }
 
-        const data = await response.json();
+    searchInput.addEventListener("input", () => {
+        clearTimeout(searchTimer);
 
-        const categories = [
-            ...new Set(
-                (data.foods || [])
-                    .map(food => food.category)
-                    .filter(Boolean)
-            )
-        ].sort();
-
-        for (const category of categories) {
-            const option = document.createElement("option");
-
-            option.value = category;
-            option.textContent = category;
-
-            categorySelect.appendChild(option);
-        }
-
-    } catch (error) {
-        console.error(
-            "Unable to load IFCT categories:",
-            error
+        searchTimer = setTimeout(
+            loadFoods,
+            300
         );
-    }
-}
+    });
 
-searchInput.addEventListener("input", () => {
-    clearTimeout(searchTimer);
-
-    searchTimer = setTimeout(
-        loadFoods,
-        300
+    categorySelect.addEventListener(
+        "change",
+        loadFoods
     );
-});
 
-categorySelect.addEventListener(
-    "change",
-    loadFoods
-);
+    loadCategories();
 
-loadCategories();
-
-}) ();
+})();
