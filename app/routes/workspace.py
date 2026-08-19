@@ -52,10 +52,142 @@ def owned_patient(db, user_id, patient_id):
 def calculators_page():
     return render_template("calculator.html")
 
-
 @workspace.get("/calculators/assessment-result")
 def assessment_result_page():
     return render_template("assessment_result.html")
+
+@workspace.get("/foods/<int:food_id>")
+@login_required
+def food_detail_page(food_id):
+    db = connect(current_app.config["DATABASE"])
+
+    # ---------------------------------------------------------
+    # FOOD
+    # ---------------------------------------------------------
+
+    food = db.execute(
+        """
+        SELECT
+            foods.id,
+            foods.name,
+            foods.category,
+            foods.serving_size,
+            foods.unit,
+            foods.calories,
+            foods.protein,
+            foods.carbohydrates,
+            foods.fat,
+            foods.fiber,
+
+            food_sources.source_food_code,
+            food_sources.source_food_name,
+            food_sources.ifct_group_code,
+            food_sources.ifct_group_name,
+            food_sources.regions_count,
+            food_sources.source_name,
+            food_sources.source_version,
+            food_sources.source_reference
+
+        FROM foods
+
+        LEFT JOIN food_sources
+            ON food_sources.food_id = foods.id
+
+        WHERE foods.id = ?
+          AND foods.user_id IS NULL
+        """,
+        (food_id,),
+    ).fetchone()
+
+    if not food:
+        return ("Food not found", 404)
+
+    # ---------------------------------------------------------
+    # LOCAL / COMMON NAMES
+    # ---------------------------------------------------------
+
+    aliases = db.execute(
+        """
+        SELECT
+            id,
+            alias,
+            alias_type
+        FROM food_aliases
+        WHERE food_id = ?
+        ORDER BY id
+        """,
+        (food_id,),
+    ).fetchall()
+
+    # ---------------------------------------------------------
+    # ALL IFCT COMPONENTS
+    # ---------------------------------------------------------
+
+    components = db.execute(
+        """
+        SELECT
+            component_definitions.code,
+            component_definitions.name,
+            component_definitions.category,
+            component_definitions.unit,
+            component_definitions.basis,
+            component_definitions.description,
+
+            food_components.value,
+            food_components.standard_deviation,
+            food_components.measurement_status,
+            food_components.source_reference
+
+        FROM food_components
+
+        JOIN component_definitions
+            ON component_definitions.id = food_components.component_id
+
+        WHERE food_components.food_id = ?
+
+        ORDER BY
+            component_definitions.category,
+            component_definitions.name
+        """,
+        (food_id,),
+    ).fetchall()
+
+    # ---------------------------------------------------------
+    # GROUP COMPONENTS BY CATEGORY
+    # ---------------------------------------------------------
+
+    component_groups = {}
+
+    for component in components:
+        category = component["category"] or "other"
+
+        component_groups.setdefault(
+            category,
+            []
+        ).append(dict(component))
+
+    # ---------------------------------------------------------
+    # DETERMINE WHETHER THIS IS AN IFCT FOOD
+    # ---------------------------------------------------------
+
+    is_ifct = bool(
+        food["source_food_code"]
+        or food["source_food_name"]
+        or food["ifct_group_code"]
+    )
+
+    # ---------------------------------------------------------
+    # RENDER
+    # ---------------------------------------------------------
+
+    return render_template(
+        "food_detail.html",
+        food=dict(food),
+        aliases=[dict(row) for row in aliases],
+        components=[dict(row) for row in components],
+        component_groups=component_groups,
+        is_ifct=is_ifct,
+    )
 
 
 @workspace.get("/dashboard")
@@ -518,6 +650,198 @@ def recipe_new():
     user = current_user()
     db = connect(current_app.config["DATABASE"])
 
+    if request.method == "POST":
+        if not valid_csrf(request.form.get("csrf_token")):
+            flash("Your form expired. Please try again.", "error")
+            return redirect(url_for("workspace.recipe_new"))
+
+        # ---------------------------------------------------------
+        # RECIPE INFORMATION
+        # ---------------------------------------------------------
+
+        name = request.form.get("name", "").strip()
+        food_type = request.form.get("food_type", "Vegetarian").strip()
+        category = request.form.get("category", "").strip()
+        meal_type = request.form.get("meal_type", "").strip()
+
+        if not name:
+            flash("Recipe name is required.", "error")
+            return redirect(url_for("workspace.recipe_new"))
+
+        try:
+            servings = float(request.form.get("servings", 1))
+        except (TypeError, ValueError):
+            flash("Servings must be a valid number.", "error")
+            return redirect(url_for("workspace.recipe_new"))
+
+        if servings <= 0:
+            flash("Servings must be greater than zero.", "error")
+            return redirect(url_for("workspace.recipe_new"))
+
+        preparation_method = request.form.get(
+            "preparation_method", ""
+        ).strip()
+
+        notes = request.form.get("notes", "").strip()
+
+        # ---------------------------------------------------------
+        # INGREDIENTS
+        # ---------------------------------------------------------
+
+        food_ids = request.form.getlist("ingredient_food_id[]")
+        quantities = request.form.getlist("ingredient_quantity[]")
+        units = request.form.getlist("ingredient_unit[]")
+
+        if not food_ids:
+            flash("Add at least one ingredient.", "error")
+            return redirect(url_for("workspace.recipe_new"))
+
+        if not (
+            len(food_ids)
+            == len(quantities)
+            == len(units)
+        ):
+            flash("Invalid ingredient data.", "error")
+            return redirect(url_for("workspace.recipe_new"))
+
+        ingredients = []
+
+        try:
+            for food_id_raw, quantity_raw, unit_raw in zip(
+                food_ids,
+                quantities,
+                units,
+            ):
+                if not food_id_raw:
+                    raise ValueError("food")
+
+                food_id = int(food_id_raw)
+
+                quantity = float(quantity_raw)
+
+                unit = unit_raw.strip()
+
+                if quantity <= 0:
+                    raise ValueError("quantity")
+
+                if not unit:
+                    raise ValueError("unit")
+
+                # -------------------------------------------------
+                # Verify food belongs to shared library or user
+                # -------------------------------------------------
+
+                food = db.execute(
+                    """
+                    SELECT id
+                    FROM foods
+                    WHERE id = ?
+                      AND (user_id IS NULL OR user_id = ?)
+                    """,
+                    (food_id, user["id"]),
+                ).fetchone()
+
+                if not food:
+                    raise ValueError("food")
+
+                ingredients.append(
+                    {
+                        "food_id": food_id,
+                        "quantity": quantity,
+                        "unit": unit,
+                    }
+                )
+
+        except (TypeError, ValueError):
+            flash(
+                "Please check all ingredients, quantities, and units.",
+                "error",
+            )
+            return redirect(url_for("workspace.recipe_new"))
+
+        # ---------------------------------------------------------
+        # SAVE RECIPE + INGREDIENTS
+        # ---------------------------------------------------------
+
+        timestamp = now()
+
+        try:
+            with db:
+                cursor = db.execute(
+                    """
+                    INSERT INTO recipes (
+                        user_id,
+                        name,
+                        food_type,
+                        category,
+                        meal_type,
+                        servings,
+                        preparation_method,
+                        notes,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        user["id"],
+                        name,
+                        food_type,
+                        category,
+                        meal_type,
+                        servings,
+                        preparation_method,
+                        notes,
+                        timestamp,
+                        timestamp,
+                    ),
+                )
+
+                recipe_id = cursor.lastrowid
+
+                for ingredient in ingredients:
+                    db.execute(
+                        """
+                        INSERT INTO recipe_ingredients (
+                            recipe_id,
+                            food_id,
+                            quantity,
+                            unit,
+                            notes,
+                            created_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            recipe_id,
+                            ingredient["food_id"],
+                            ingredient["quantity"],
+                            ingredient["unit"],
+                            "",
+                            timestamp,
+                        ),
+                    )
+
+        except Exception:
+            flash(
+                "Unable to save the recipe. Please try again.",
+                "error",
+            )
+            return redirect(url_for("workspace.recipe_new"))
+
+        flash("Recipe saved successfully.", "success")
+
+        return redirect(
+            url_for(
+                "workspace.recipe_detail",
+                recipe_id=recipe_id,
+            )
+        )
+
+    # -------------------------------------------------------------
+    # LOAD FOODS FOR FORM
+    # -------------------------------------------------------------
+
     foods = db.execute(
         """
         SELECT
@@ -543,6 +867,137 @@ def recipe_new():
         "recipe_new.html",
         foods=foods,
         csrf_token=csrf_token(),
+    )
+
+@workspace.route("/foods/recipes/<int:recipe_id>")
+@login_required
+def recipe_detail(recipe_id):
+    user = current_user()
+    db = connect(current_app.config["DATABASE"])
+
+    recipe = db.execute(
+        """
+        SELECT
+            id,
+            name,
+            food_type,
+            category,
+            meal_type,
+            servings,
+            preparation_method,
+            notes,
+            created_at,
+            updated_at
+        FROM recipes
+        WHERE id = ?
+          AND user_id = ?
+        """,
+        (recipe_id, user["id"]),
+    ).fetchone()
+
+    if not recipe:
+        return ("Recipe not found", 404)
+
+    ingredients = db.execute(
+        """
+        SELECT
+            recipe_ingredients.id,
+            recipe_ingredients.food_id,
+            recipe_ingredients.quantity,
+            recipe_ingredients.unit,
+            recipe_ingredients.notes,
+
+            foods.name,
+            foods.serving_size,
+            foods.calories,
+            foods.protein,
+            foods.carbohydrates,
+            foods.fat,
+            foods.fiber
+
+        FROM recipe_ingredients
+
+        JOIN foods
+            ON foods.id = recipe_ingredients.food_id
+
+        WHERE recipe_ingredients.recipe_id = ?
+
+        ORDER BY recipe_ingredients.id
+        """,
+        (recipe_id,),
+    ).fetchall()
+
+    # ---------------------------------------------------------
+    # NUTRITION TOTALS
+    # ---------------------------------------------------------
+
+    totals = {
+        "calories": 0.0,
+        "protein": 0.0,
+        "carbohydrates": 0.0,
+        "fat": 0.0,
+        "fiber": 0.0,
+    }
+
+    ingredient_rows = []
+
+    for ingredient in ingredients:
+        quantity = float(ingredient["quantity"] or 0)
+
+        # Current IFCT food values are stored per 100 g.
+        factor = quantity / 100.0
+
+        nutrition = {
+            "calories": float(
+                ingredient["calories"] or 0
+            ) * factor,
+
+            "protein": float(
+                ingredient["protein"] or 0
+            ) * factor,
+
+            "carbohydrates": float(
+                ingredient["carbohydrates"] or 0
+            ) * factor,
+
+            "fat": float(
+                ingredient["fat"] or 0
+            ) * factor,
+
+            "fiber": float(
+                ingredient["fiber"] or 0
+            ) * factor,
+        }
+
+        for key in totals:
+            totals[key] += nutrition[key]
+
+        ingredient_rows.append(
+            {
+                "name": ingredient["name"],
+                "quantity": quantity,
+                "unit": ingredient["unit"],
+                "nutrition": nutrition,
+            }
+        )
+
+    # ---------------------------------------------------------
+    # PER SERVING
+    # ---------------------------------------------------------
+
+    servings = float(recipe["servings"] or 1)
+
+    per_serving = {
+        key: totals[key] / servings
+        for key in totals
+    }
+
+    return render_template(
+        "recipe_detail.html",
+        recipe=dict(recipe),
+        ingredients=ingredient_rows,
+        totals=totals,
+        per_serving=per_serving,
     )
 
 @workspace.route(

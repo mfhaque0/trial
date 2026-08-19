@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<main class="page">
+
+    <!-- =====================================================
+         RECIPE HEADER
+         ===================================================== -->
+
+    <section class="card" style="
+        margin-bottom: 24px;
+        padding: 32px;
+    ">
+
+        <p class="eyebrow">
+            RECIPE DETAILS
+        </p>
+
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            flex-wrap: wrap;
+        ">
+
+            <div>
+                <h1 style="
+                    margin: 0 0 10px;
+                    font-family: Georgia, serif;
+                ">
+                    {{ recipe.name }}
+                </h1>
+
+                <p style="
+                    margin: 0;
+                    color: var(--muted);
+                ">
+                    {{ recipe.food_type }}
+
+                    {% if recipe.category %}
+                        · {{ recipe.category }}
+                    {% endif %}
+
+                    {% if recipe.meal_type %}
+                        · {{ recipe.meal_type }}
+                    {% endif %}
+                </p>
+            </div>
+
+            <div style="
+                text-align: right;
+                color: var(--muted);
+            ">
+                <strong style="
+                    display: block;
+                    color: var(--ink);
+                    font-size: 1.2rem;
+                ">
+                    {{ recipe.servings }}
+                </strong>
+
+                serving{% if recipe.servings != 1 %}s{% endif %}
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         INGREDIENTS
+         ===================================================== -->
+
+    <section class="card" style="
+        margin-bottom: 24px;
+        padding: 0;
+        overflow: hidden;
+    ">
+
+        <div style="
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--line);
+        ">
+
+            <p class="eyebrow" style="margin-bottom: 6px;">
+                INGREDIENTS
+            </p>
+
+            <h2 style="
+                margin: 0;
+                font-family: Georgia, serif;
+            ">
+                Recipe Ingredients
+            </h2>
+
+        </div>
+
+
+        {% if ingredients %}
+
+        <div style="
+            overflow-x: auto;
+        ">
+
+            <table style="
+                width: 100%;
+                border-collapse: collapse;
+            ">
+
+                <thead>
+                    <tr style="
+                        border-bottom: 1px solid var(--line);
+                        text-align: left;
+                    ">
+
+                        <th style="padding: 16px 24px;">
+                            Food
+                        </th>
+
+                        <th style="padding: 16px 24px;">
+                            Quantity
+                        </th>
+
+                        <th style="padding: 16px 24px;">
+                            Calories
+                        </th>
+
+                        <th style="padding: 16px 24px;">
+                            Protein
+                        </th>
+
+                        <th style="padding: 16px 24px;">
+                            Carbs
+                        </th>
+
+                        <th style="padding: 16px 24px;">
+                            Fat
+                        </th>
+
+                        <th style="padding: 16px 24px;">
+                            Fiber
+                        </th>
+
+                    </tr>
+                </thead>
+
+
+                <tbody>
+
+                    {% for ingredient in ingredients %}
+
+                    <tr style="
+                        border-bottom: 1px solid var(--line);
+                    ">
+
+                        <td style="
+                            padding: 16px 24px;
+                            font-weight: 600;
+                        ">
+                            {{ ingredient.name }}
+                        </td>
+
+                        <td style="
+                            padding: 16px 24px;
+                            white-space: nowrap;
+                        ">
+                            {{ "%.2f"|format(ingredient.quantity) }}
+                            {{ ingredient.unit }}
+                        </td>
+
+                        <td style="padding: 16px 24px;">
+                            {{ "%.1f"|format(ingredient.nutrition.calories) }}
+                        </td>
+
+                        <td style="padding: 16px 24px;">
+                            {{ "%.1f"|format(ingredient.nutrition.protein) }} g
+                        </td>
+
+                        <td style="padding: 16px 24px;">
+                            {{ "%.1f"|format(ingredient.nutrition.carbohydrates) }} g
+                        </td>
+
+                        <td style="padding: 16px 24px;">
+                            {{ "%.1f"|format(ingredient.nutrition.fat) }} g
+                        </td>
+
+                        <td style="padding: 16px 24px;">
+                            {{ "%.1f"|format(ingredient.nutrition.fiber) }} g
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div style="
+            padding: 40px;
+            text-align: center;
+            color: var(--muted);
+        ">
+            No ingredients found.
+        </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- =====================================================
+         TOTAL NUTRITION
+         ===================================================== -->
+
+    <section class="card" style="
+        margin-bottom: 24px;
+        padding: 32px;
+    ">
+
+        <p class="eyebrow" style="margin-bottom: 6px;">
+            NUTRITION SUMMARY
+        </p>
+
+        <h2 style="
+            margin: 0 0 24px;
+            font-family: Georgia, serif;
+        ">
+            Total Nutrition
+        </h2>
+
+
+        <div style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        ">
+
+            <div class="card" style="margin: 0;">
+                <small>Calories</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(totals.calories) }}
+                    <small>kcal</small>
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Protein</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(totals.protein) }} g
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Carbohydrates</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(totals.carbohydrates) }} g
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Fat</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(totals.fat) }} g
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Fiber</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(totals.fiber) }} g
+                </strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         PER SERVING
+         ===================================================== -->
+
+    <section class="card" style="
+        margin-bottom: 24px;
+        padding: 32px;
+    ">
+
+        <p class="eyebrow" style="margin-bottom: 6px;">
+            PER SERVING
+        </p>
+
+        <h2 style="
+            margin: 0 0 24px;
+            font-family: Georgia, serif;
+        ">
+            Nutrition Per Serving
+        </h2>
+
+
+        <div style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        ">
+
+            <div class="card" style="margin: 0;">
+                <small>Calories</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(per_serving.calories) }}
+                    <small>kcal</small>
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Protein</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(per_serving.protein) }} g
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Carbohydrates</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(per_serving.carbohydrates) }} g
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Fat</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(per_serving.fat) }} g
+                </strong>
+            </div>
+
+
+            <div class="card" style="margin: 0;">
+                <small>Fiber</small>
+                <strong style="
+                    display: block;
+                    margin-top: 6px;
+                    font-size: 1.5rem;
+                ">
+                    {{ "%.1f"|format(per_serving.fiber) }} g
+                </strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         PREPARATION
+         ===================================================== -->
+
+    {% if recipe.preparation_method %}
+
+    <section class="card" style="
+        margin-bottom: 24px;
+        padding: 32px;
+    ">
+
+        <p class="eyebrow" style="margin-bottom: 6px;">
+            PREPARATION
+        </p>
+
+        <h2 style="
+            margin: 0 0 16px;
+            font-family: Georgia, serif;
+        ">
+            Preparation Method
+        </h2>
+
+        <div style="
+            white-space: pre-line;
+            line-height: 1.7;
+            color: var(--muted);
+        ">
+            {{ recipe.preparation_method }}
+        </div>
+
+    </section>
+
+    {% endif %}
+
+
+    <!-- =====================================================
+         NOTES
+         ===================================================== -->
+
+    {% if recipe.notes %}
+
+    <section class="card" style="
+        margin-bottom: 24px;
+        padding: 32px;
+    ">
+
+        <p class="eyebrow" style="margin-bottom: 6px;">
+            NOTES
+        </p>
+
+        <h2 style="
+            margin: 0 0 16px;
+            font-family: Georgia, serif;
+        ">
+            Additional Notes
+        </h2>
+
+        <div style="
+            white-space: pre-line;
+            line-height: 1.7;
+            color: var(--muted);
+        ">
+            {{ recipe.notes }}
+        </div>
+
+    </section>
+
+    {% endif %}
+
+
+    <!-- =====================================================
+         ACTIONS
+         ===================================================== -->
+
+    <div class="actions">
+
+        <a
+            class="button secondary"
+            href="{{ url_for('workspace.foods') }}"
+        >
+            ← Back to Foods
+        </a>
+
+        <a
+            class="button"
+            href="{{ url_for('workspace.recipe_new') }}"
+        >
+            + Create Another Recipe
+        </a>
+
+    </div>
+
+</main>
+
+{% endblock %}
