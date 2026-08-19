@@ -699,17 +699,6 @@ function initCalculator() {
             .replace(/(\.\d)0$/, "$1");
     }
 
-
-    /*
-     * Calories:
-     * Display using 3 significant digits.
-     *
-     * Examples:
-     * 125       → 125
-     * 139.818   → 140
-     * 320.27    → 320
-     * 103.489   → 103
-     */
     function formatCalories(value) {
         if (value === null || value === undefined || value === "") {
             return "—";
@@ -724,177 +713,174 @@ function initCalculator() {
         return Number(number.toPrecision(3)).toString();
     }
 
+    // ---------------------------------------------------------
+    // RENDER FOOD RESULTS
+    // ---------------------------------------------------------
 
     function renderResults(foods) {
-
         if (!foods.length) {
-
             resultsContainer.innerHTML = `
-            <div class="ifct-status">
-                No IFCT foods found.
-            </div>
-        `;
+                <div class="ifct-status">
+                    No IFCT foods found.
+                </div>
+            `;
 
             return;
         }
 
-
         resultsContainer.innerHTML = `
+            <div class="ifct-card-grid">
 
-        <div class="ifct-card-grid">
+                ${foods.map(food => `
 
-            ${foods.map(food => `
+                    <article class="ifct-result-card">
 
-                <article class="ifct-result-card">
+                        <!-- FOOD HEADER -->
 
-                    <!-- FOOD HEADER -->
+                        <div class="ifct-result-header">
 
-                    <div class="ifct-result-header">
+                            <div class="ifct-result-title">
 
-                        <div class="ifct-result-title">
+                                <h3>
+                                    ${escapeHtml(food.name)}
+                                </h3>
 
-                            <h3>
-                                ${escapeHtml(food.name)}
-                            </h3>
+                                <p>
+                                    ${escapeHtml(
+                                        food.category || "Uncategorized"
+                                    )}
+                                </p>
 
-                            <p>
-                                ${escapeHtml(
-            food.category || "Uncategorized"
-        )}
-                            </p>
+                            </div>
 
-                        </div>
-
-                        <div class="ifct-serving">
-                            100 g
-                        </div>
-
-                    </div>
-
-
-                    <!-- NUTRITION -->
-
-                    <div class="ifct-nutrition-grid">
-
-                        <div class="ifct-nutrition-box calories">
-
-                            <strong>
-                                ${formatCalories(food.calories)}
-                            </strong>
-
-                            <small>
-                                kcal
-                            </small>
+                            <div class="ifct-serving">
+                                100 g
+                            </div>
 
                         </div>
 
 
-                        <div class="ifct-nutrition-box">
+                        <!-- NUTRITION -->
 
-                            <strong>
-                                ${formatNumber(food.protein)}
-                            </strong>
+                        <div class="ifct-nutrition-grid">
 
-                            <small>
-                                Protein · g
-                            </small>
+                            <div class="ifct-nutrition-box calories">
+
+                                <strong>
+                                    ${formatCalories(food.calories)}
+                                </strong>
+
+                                <small>
+                                    kcal
+                                </small>
+
+                            </div>
+
+
+                            <div class="ifct-nutrition-box">
+
+                                <strong>
+                                    ${formatNumber(food.protein)}
+                                </strong>
+
+                                <small>
+                                    Protein · g
+                                </small>
+
+                            </div>
+
+
+                            <div class="ifct-nutrition-box">
+
+                                <strong>
+                                    ${formatNumber(food.carbohydrates)}
+                                </strong>
+
+                                <small>
+                                    Carbs · g
+                                </small>
+
+                            </div>
+
+
+                            <div class="ifct-nutrition-box">
+
+                                <strong>
+                                    ${formatNumber(food.fat)}
+                                </strong>
+
+                                <small>
+                                    Fat · g
+                                </small>
+
+                            </div>
+
+
+                            <div class="ifct-nutrition-box">
+
+                                <strong>
+                                    ${formatNumber(food.fiber)}
+                                </strong>
+
+                                <small>
+                                    Fiber · g
+                                </small>
+
+                            </div>
 
                         </div>
 
 
-                        <div class="ifct-nutrition-box">
+                        <!-- FOOTER -->
 
-                            <strong>
-                                ${formatNumber(food.carbohydrates)}
-                            </strong>
+                        <div class="ifct-result-footer">
 
-                            <small>
-                                Carbs · g
-                            </small>
+                            <span>
+                                Nutritional values per serving
+                            </span>
 
-                        </div>
-
-
-                        <div class="ifct-nutrition-box">
-
-                            <strong>
-                                ${formatNumber(food.fat)}
-                            </strong>
-
-                            <small>
-                                Fat · g
-                            </small>
+                            <button
+                                type="button"
+                                class="button ifct-details-button"
+                                data-food-id="${food.id}"
+                            >
+                                View details
+                            </button>
 
                         </div>
 
+                    </article>
 
-                        <div class="ifct-nutrition-box">
+                `).join("")}
 
-                            <strong>
-                                ${formatNumber(food.fiber)}
-                            </strong>
+            </div>
+        `;
 
-                            <small>
-                                Fiber · g
-                            </small>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- FOOTER -->
-
-                    <div class="ifct-result-footer">
-
-                        <span>
-                            Nutritional values per serving
-                        </span>
-
-                        <button
-                            type="button"
-                            class="button ifct-details-button"
-                            data-food-id="${food.id}"
-                        >
-                            View details
-                        </button>
-
-                    </div>
-
-                </article>
-
-            `).join("")}
-
-        </div>
-
-    `;
-    }
-
-
-
-    // Bind "View details" buttons rendered directly in the
-    // server-side "Your database" table.
-    function bindStaticFoodDetailButtons() {
+        // Bind View Details buttons AFTER rendering
         document
-            .querySelectorAll(".ifct-details-button")
+            .querySelectorAll("#ifct-results .ifct-details-button")
             .forEach(button => {
-                if (button.dataset.detailsBound === "true") {
-                    return;
-                }
-
-                button.dataset.detailsBound = "true";
 
                 button.addEventListener("click", () => {
+
                     const foodId = button.dataset.foodId;
 
                     if (foodId) {
                         loadFoodDetails(foodId);
                     }
+
                 });
+
             });
     }
 
+
+    // ---------------------------------------------------------
+    // LOAD FOOD DETAILS
+    // ---------------------------------------------------------
+
     async function loadFoodDetails(foodId) {
+
         resultsContainer.innerHTML = `
             <div class="ifct-status">
                 Loading complete IFCT details...
@@ -902,6 +888,7 @@ function initCalculator() {
         `;
 
         try {
+
             const response = await fetch(
                 `/api/foods/${encodeURIComponent(foodId)}`,
                 {
@@ -911,25 +898,31 @@ function initCalculator() {
                 }
             );
 
+            const data = await response.json().catch(() => ({}));
+
             if (!response.ok) {
-                const data = await response.json().catch(() => ({}));
+
                 throw new Error(
                     data.error || `HTTP ${response.status}`
                 );
-            }
 
-            const data = await response.json();
+            }
 
             renderFoodDetails(
                 data.food,
-                data.components || []
+                data.components || [],
+                data.aliases || []
             );
+
             requestAnimationFrame(() => {
-                const detailCard = resultsContainer.querySelector(
-                    ".ifct-detail-card"
-                );
+
+                const detailCard =
+                    resultsContainer.querySelector(
+                        ".ifct-detail-card"
+                    );
 
                 if (detailCard) {
+
                     const headerOffset = 100;
 
                     const targetPosition =
@@ -941,10 +934,13 @@ function initCalculator() {
                         top: targetPosition,
                         behavior: "smooth"
                     });
+
                 }
+
             });
 
         } catch (error) {
+
             console.error(
                 "IFCT food details failed:",
                 error
@@ -959,11 +955,23 @@ function initCalculator() {
         }
     }
 
-    function renderFoodDetails(food, components) {
+
+    // ---------------------------------------------------------
+    // RENDER FOOD DETAILS
+    // ---------------------------------------------------------
+
+    function renderFoodDetails(
+        food,
+        components,
+        aliases = []
+    ) {
+
         const grouped = {};
 
         for (const component of components) {
-            const category = component.category || "other";
+
+            const category =
+                component.category || "other";
 
             if (!grouped[category]) {
                 grouped[category] = [];
@@ -972,120 +980,175 @@ function initCalculator() {
             grouped[category].push(component);
         }
 
+
         const categoryLabels = {
+
             proximate: "Proximate Composition",
+
             energy: "Energy",
+
             carbohydrate: "Carbohydrate",
+
             dietary_fibre: "Dietary Fibre",
+
             oligosaccharide: "Oligosaccharides",
+
             phytate: "Phytate",
+
             phytosterol: "Phytosterols",
+
             saponin: "Saponins",
+
             fatty_acid: "Fatty Acids",
+
             other: "Other Components"
+
         };
 
+
         const categoryOrder = [
+
             "proximate",
+
             "energy",
+
             "carbohydrate",
+
             "dietary_fibre",
+
             "oligosaccharide",
+
             "phytate",
+
             "phytosterol",
+
             "saponin",
+
             "fatty_acid",
+
             "other"
+
         ];
 
+
         const sections = categoryOrder
-            .filter(category => grouped[category]?.length)
+
+            .filter(
+                category =>
+                    grouped[category]?.length
+            )
+
             .map(category => `
+
                 <section class="ifct-detail-section">
 
                     <h3>
                         ${escapeHtml(
-                categoryLabels[category] || category
-            )}
+                            categoryLabels[category] || category
+                        )}
                     </h3>
 
                     <div class="ifct-component-grid">
 
-                        ${grouped[category].map(component => {
+                        ${grouped[category]
+                            .map(component => {
 
-                const belowLimit =
-                    component.measurement_status ===
-                    "below_detection_limit";
+                                const belowLimit =
+                                    component.measurement_status ===
+                                    "below_detection_limit";
 
-                let value = "—";
+                                let value = "—";
 
-                if (belowLimit) {
-                    value = "Below detectable limit";
-                } else if (
-                    component.value !== null &&
-                    component.value !== undefined
-                ) {
-                    value = formatNumber(
-                        component.value
-                    );
+                                if (belowLimit) {
 
-                    if (
-                        component.standard_deviation !== null &&
-                        component.standard_deviation !== undefined
-                    ) {
-                        value +=
-                            ` ± ${formatNumber(
-                                component.standard_deviation
-                            )}`;
-                    }
-                }
+                                    value =
+                                        "Below detectable limit";
 
-                return `
-                                <div class="ifct-component">
+                                } else if (
+                                    component.value !== null &&
+                                    component.value !== undefined
+                                ) {
 
-                                    <div>
-                                        <strong>
-                                            ${escapeHtml(
-                    component.name
-                )}
-                                        </strong>
+                                    value =
+                                        formatNumber(
+                                            component.value
+                                        );
 
-                                        <small>
-                                            ${escapeHtml(
-                    component.code || ""
-                )}
-                                        </small>
+                                    if (
+                                        component.standard_deviation !== null &&
+                                        component.standard_deviation !== undefined
+                                    ) {
+
+                                        value +=
+                                            ` ± ${formatNumber(
+                                                component.standard_deviation
+                                            )}`;
+                                    }
+
+                                }
+
+
+                                return `
+
+                                    <div class="ifct-component">
+
+                                        <div>
+
+                                            <strong>
+                                                ${escapeHtml(
+                                                    component.name
+                                                )}
+                                            </strong>
+
+                                            <small>
+                                                ${escapeHtml(
+                                                    component.code || ""
+                                                )}
+                                            </small>
+
+                                        </div>
+
+
+                                        <div class="ifct-component-value">
+
+                                            <strong>
+                                                ${escapeHtml(value)}
+                                            </strong>
+
+                                            ${
+                                                belowLimit
+                                                    ? ""
+                                                    : `<small>${escapeHtml(
+                                                        component.unit || ""
+                                                    )}</small>`
+                                            }
+
+                                        </div>
+
                                     </div>
 
-                                    <div class="ifct-component-value">
-                                        <strong>
-                                            ${escapeHtml(value)}
-                                        </strong>
+                                `;
 
-                                        ${belowLimit
-                        ? ""
-                        : `<small>${escapeHtml(
-                            component.unit || ""
-                        )}</small>`
-                    }
-                                    </div>
-
-                                </div>
-                            `;
-            }).join("")}
+                            })
+                            .join("")}
 
                     </div>
 
                 </section>
+
             `)
+
             .join("");
 
+
         resultsContainer.innerHTML = `
+
             <div class="ifct-detail-card">
 
                 <div class="ifct-detail-header">
 
                     <div>
+
                         <p class="eyebrow">
                             ICMR-NIN IFCT 2017
                         </p>
@@ -1094,16 +1157,59 @@ function initCalculator() {
                             ${escapeHtml(food.name)}
                         </h2>
 
+
+                        ${
+                            aliases.length
+                                ? `
+
+                                    <div class="ifct-local-names">
+
+                                        <span class="ifct-local-label">
+                                            Local / Common Names
+                                        </span>
+
+                                        <div class="ifct-local-name-list">
+
+                                            ${aliases
+                                                .map(
+                                                    alias => `
+
+                                                        <span class="ifct-local-name">
+                                                            ${escapeHtml(
+                                                                alias.alias
+                                                            )}
+                                                        </span>
+
+                                                    `
+                                                )
+                                                .join("")}
+
+                                        </div>
+
+                                    </div>
+
+                                `
+                                : ""
+                        }
+
+
                         <p class="ifct-food-meta">
+
                             ${escapeHtml(
-            food.source_food_code || ""
-        )}
+                                food.source_food_code || ""
+                            )}
+
                             ·
+
                             ${escapeHtml(
-            food.category || "Uncategorized"
-        )}
+                                food.category ||
+                                "Uncategorized"
+                            )}
+
                         </p>
+
                     </div>
+
 
                     <button
                         type="button"
@@ -1115,104 +1221,178 @@ function initCalculator() {
 
                 </div>
 
+
                 <div class="ifct-basic-grid">
 
                     <div class="ifct-nutrient">
-                        <strong>${formatNumber(food.calories)}</strong>
-                        <small>kcal</small>
+
+                        <strong>
+                            ${formatNumber(food.calories)}
+                        </strong>
+
+                        <small>
+                            kcal
+                        </small>
+
                     </div>
 
-                    <div class="ifct-nutrient">
-                        <strong>${formatNumber(food.protein)}</strong>
-                        <small>protein g</small>
-                    </div>
 
                     <div class="ifct-nutrient">
-                        <strong>${formatNumber(food.carbohydrates)}</strong>
-                        <small>carbs g</small>
+
+                        <strong>
+                            ${formatNumber(food.protein)}
+                        </strong>
+
+                        <small>
+                            protein g
+                        </small>
+
                     </div>
 
-                    <div class="ifct-nutrient">
-                        <strong>${formatNumber(food.fat)}</strong>
-                        <small>fat g</small>
-                    </div>
 
                     <div class="ifct-nutrient">
-                        <strong>${formatNumber(food.fiber)}</strong>
-                        <small>fibre g</small>
+
+                        <strong>
+                            ${formatNumber(food.carbohydrates)}
+                        </strong>
+
+                        <small>
+                            carbs g
+                        </small>
+
+                    </div>
+
+
+                    <div class="ifct-nutrient">
+
+                        <strong>
+                            ${formatNumber(food.fat)}
+                        </strong>
+
+                        <small>
+                            fat g
+                        </small>
+
+                    </div>
+
+
+                    <div class="ifct-nutrient">
+
+                        <strong>
+                            ${formatNumber(food.fiber)}
+                        </strong>
+
+                        <small>
+                            fibre g
+                        </small>
+
                     </div>
 
                 </div>
 
-                ${sections || `
-                    <div class="ifct-status">
-                        No additional component data reported.
-                    </div>
-                `}
+
+                ${
+                    sections ||
+                    `
+                        <div class="ifct-status">
+                            No additional component data reported.
+                        </div>
+                    `
+                }
+
 
                 <div class="ifct-source-note">
+
                     Source:
+
                     ${escapeHtml(
-            food.source_name ||
-            "ICMR-NIN IFCT 2017"
-        )}
+                        food.source_name ||
+                        "ICMR-NIN IFCT 2017"
+                    )}
 
-                    ${food.source_version
-                ? ` · ${escapeHtml(
-                    food.source_version
-                )}`
-                : ""
-            }
+                    ${
+                        food.source_version
+                            ? ` · ${escapeHtml(
+                                food.source_version
+                            )}`
+                            : ""
+                    }
 
-                    ${food.regions_count
-                ? ` · ${escapeHtml(
-                    String(food.regions_count)
-                )} regions`
-                : ""
-            }
+                    ${
+                        food.regions_count
+                            ? ` · ${escapeHtml(
+                                String(
+                                    food.regions_count
+                                )
+                            )} regions`
+                            : ""
+                    }
+
                 </div>
 
             </div>
+
         `;
+
 
         const backButton =
             document.getElementById(
                 "ifct-back-to-results"
             );
 
+
         if (backButton) {
+
             backButton.addEventListener(
                 "click",
                 loadFoods
             );
+
         }
+
     }
 
-    // Bind buttons already rendered by templates/foods.html.
-    bindStaticFoodDetailButtons();
+
+    // ---------------------------------------------------------
+    // LOAD FOODS
+    // ---------------------------------------------------------
 
     async function loadFoods() {
-        const query = searchInput.value.trim();
-        const category = categorySelect.value;
+
+        const query =
+            searchInput.value.trim();
+
+        const category =
+            categorySelect.value;
+
 
         resultsContainer.innerHTML = `
+
             <div class="ifct-status">
                 Searching IFCT database...
             </div>
+
         `;
 
+
         try {
-            const params = new URLSearchParams();
+
+            const params =
+                new URLSearchParams();
+
 
             if (query) {
                 params.set("q", query);
             }
 
+
             if (category) {
                 params.set("category", category);
             }
 
+
             params.set("limit", "100");
+
 
             const response = await fetch(
                 `/api/foods?${params.toString()}`,
@@ -1223,74 +1403,163 @@ function initCalculator() {
                 }
             );
 
+
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
+
             }
 
-            const data = await response.json();
 
-            renderResults(data.foods || []);
+            const data =
+                await response.json();
+
+
+            renderResults(
+                data.foods || []
+            );
+
 
         } catch (error) {
-            console.error("IFCT food search failed:", error);
+
+            console.error(
+                "IFCT food search failed:",
+                error
+            );
+
 
             resultsContainer.innerHTML = `
+
                 <div class="ifct-status">
+
                     Unable to load the IFCT food database.
+
                     Please try again.
+
                 </div>
+
             `;
+
         }
+
     }
 
+
+    // ---------------------------------------------------------
+    // LOAD CATEGORIES
+    // ---------------------------------------------------------
+
     async function loadCategories() {
+
         try {
-            const response = await fetch("/api/foods?limit=100");
+
+            const response =
+                await fetch(
+                    "/api/foods?limit=100"
+                );
+
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
+
             }
 
-            const data = await response.json();
+
+            const data =
+                await response.json();
+
 
             const categories = [
+
                 ...new Set(
+
                     (data.foods || [])
-                        .map(food => food.category)
+
+                        .map(
+                            food => food.category
+                        )
+
                         .filter(Boolean)
+
                 )
+
             ].sort();
 
+
             for (const category of categories) {
-                const option = document.createElement("option");
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
 
                 option.value = category;
-                option.textContent = category;
 
-                categorySelect.appendChild(option);
+                option.textContent =
+                    category;
+
+
+                categorySelect.appendChild(
+                    option
+                );
+
             }
 
+
         } catch (error) {
+
             console.error(
                 "Unable to load IFCT categories:",
                 error
             );
+
         }
+
     }
 
-    searchInput.addEventListener("input", () => {
-        clearTimeout(searchTimer);
 
-        searchTimer = setTimeout(
-            loadFoods,
-            300
-        );
-    });
+    // ---------------------------------------------------------
+    // SEARCH
+    // ---------------------------------------------------------
+
+    searchInput.addEventListener(
+        "input",
+        () => {
+
+            clearTimeout(
+                searchTimer
+            );
+
+
+            searchTimer =
+                setTimeout(
+                    loadFoods,
+                    300
+                );
+
+        }
+    );
+
+
+    // ---------------------------------------------------------
+    // CATEGORY FILTER
+    // ---------------------------------------------------------
 
     categorySelect.addEventListener(
         "change",
         loadFoods
     );
+
+
+    // ---------------------------------------------------------
+    // INITIAL LOAD
+    // ---------------------------------------------------------
 
     loadCategories();
 

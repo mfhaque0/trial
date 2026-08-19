@@ -1,14 +1,31 @@
 import json
 from datetime import datetime, timezone
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
 from app.models.database import connect
-from app.routes.common import current_user, csrf_token, login_required, valid_csrf
-from app.services.calculations import CalculationError, calculate_assessment
+from app.routes.common import (
+    current_user,
+    csrf_token,
+    login_required,
+    valid_csrf,
+)
+from app.services.calculations import (
+    CalculationError,
+    calculate_assessment,
+)
 
 
 workspace = Blueprint("workspace", __name__)
+
 
 MEALS = [
     "Breakfast",
@@ -34,6 +51,7 @@ def owned_patient(db, user_id, patient_id):
 @workspace.get("/calculators")
 def calculators_page():
     return render_template("calculator.html")
+
 
 @workspace.get("/calculators/assessment-result")
 def assessment_result_page():
@@ -166,6 +184,7 @@ def patient_detail(patient_id):
                 "WHERE id=? AND user_id=?",
                 (now(), now(), patient_id, user["id"]),
             )
+
             db.commit()
 
             flash("Patient archived.", "success")
@@ -211,12 +230,15 @@ def assessment(patient_id):
     if request.method == "POST":
         if not valid_csrf(request.form.get("csrf_token")):
             flash("Your form expired.", "error")
+
         else:
             try:
                 data = dict(request.form)
+
                 data["custom_macros"] = bool(
                     request.form.get("custom_macros")
                 )
+
                 data["macros"] = {
                     k: request.form.get(k)
                     for k in ("protein", "carbs", "fat")
@@ -270,59 +292,16 @@ def assessment(patient_id):
     )
 
 
-@workspace.route("/foods", methods=["GET", "POST"])
+# -------------------------------------------------------------------
+# FOOD LIBRARY
+# -------------------------------------------------------------------
+
+@workspace.get("/foods")
 @login_required
 def foods():
     user = current_user()
     db = connect(current_app.config["DATABASE"])
 
-    if request.method == "POST" and valid_csrf(
-        request.form.get("csrf_token")
-    ):
-        try:
-            values = (
-                user["id"],
-                request.form["name"].strip(),
-                request.form.get("category", "Other"),
-                request.form.get("serving_size", "1 serving"),
-                request.form.get("unit", "serving"),
-                *[
-                    _number(request.form.get(k), k)
-                    for k in (
-                        "calories",
-                        "protein",
-                        "carbohydrates",
-                        "fat",
-                        "fiber",
-                    )
-                ],
-                now(),
-            )
-
-            db.execute(
-                "INSERT INTO foods("
-                "user_id,name,category,serving_size,unit,"
-                "calories,protein,carbohydrates,fat,fiber,created_at"
-                ") VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                values,
-            )
-
-            db.commit()
-
-            flash(
-                "Food saved as your own reference item.",
-                "success",
-            )
-
-            return redirect(url_for("workspace.foods"))
-
-        except (ValueError, KeyError):
-            flash(
-                "Enter a name and valid nutrition values.",
-                "error",
-            )
-
-    # Existing food library
     rows = db.execute(
         "SELECT * FROM foods "
         "WHERE user_id IS NULL OR user_id=? "
@@ -330,7 +309,6 @@ def foods():
         (user["id"],),
     ).fetchall()
 
-    # Exchange groups for the new exchange-list section.
     exchange_groups = db.execute(
         """
         SELECT *
@@ -340,11 +318,105 @@ def foods():
         """,
         (user["id"],),
     ).fetchall()
-
+    
+    recipes = db.execute(
+        """
+        SELECT *
+        FROM recipes
+        WHERE user_id=?
+        ORDER BY category, name
+        """,
+        (user["id"],),
+    ).fetchall()
     return render_template(
         "foods.html",
         foods=rows,
         exchange_groups=exchange_groups,
+        recipes=recipes,
+        csrf_token=csrf_token(),
+    )
+
+
+@workspace.route("/foods/new", methods=["GET", "POST"])
+@login_required
+def food_new():
+    user = current_user()
+    db = connect(current_app.config["DATABASE"])
+
+    if request.method == "POST":
+        if not valid_csrf(request.form.get("csrf_token")):
+            flash("Your form expired.", "error")
+
+        else:
+            try:
+                name = request.form.get("name", "").strip()
+
+                if not name:
+                    raise ValueError("name")
+
+                values = (
+                    user["id"],
+                    name,
+                    request.form.get("food_type", "Vegetarian"),
+                    request.form.get("category", ""),
+                    request.form.get("meal_type", ""),
+                    request.form.get(
+                        "serving_size",
+                        "1 serving",
+                    ),
+                    request.form.get(
+                        "unit",
+                        "serving",
+                    ),
+                    _number(
+                        request.form.get("calories"),
+                        "calories",
+                    ),
+                    _number(
+                        request.form.get("protein"),
+                        "protein",
+                    ),
+                    _number(
+                        request.form.get("carbohydrates"),
+                        "carbohydrates",
+                    ),
+                    _number(
+                        request.form.get("fat"),
+                        "fat",
+                    ),
+                    _number(
+                        request.form.get("fiber"),
+                        "fiber",
+                    ),
+                    now(),
+                )
+
+                db.execute(
+                    "INSERT INTO foods("
+                    "user_id,name,food_type,category,meal_type,"
+                    "serving_size,unit,"
+                    "calories,protein,carbohydrates,fat,fiber,created_at"
+                    ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    values,
+                )
+
+                db.commit()
+
+                flash(
+                    "Food saved as your own reference item.",
+                    "success",
+                )
+
+                return redirect(url_for("workspace.foods"))
+
+            except (ValueError, KeyError):
+                flash(
+                    "Enter a name and valid nutrition values.",
+                    "error",
+                )
+
+    return render_template(
+        "food_new.html",
         csrf_token=csrf_token(),
     )
 
@@ -440,8 +512,43 @@ def plans():
         csrf_token=csrf_token(),
     )
 
+@workspace.route("/foods/recipes/new", methods=["GET", "POST"])
+@login_required
+def recipe_new():
+    user = current_user()
+    db = connect(current_app.config["DATABASE"])
 
-@workspace.route("/plans/<int:plan_id>", methods=["GET", "POST"])
+    foods = db.execute(
+        """
+        SELECT
+            id,
+            name,
+            food_type,
+            category,
+            serving_size,
+            unit,
+            calories,
+            protein,
+            carbohydrates,
+            fat,
+            fiber
+        FROM foods
+        WHERE user_id IS NULL OR user_id=?
+        ORDER BY category, name
+        """,
+        (user["id"],),
+    ).fetchall()
+
+    return render_template(
+        "recipe_new.html",
+        foods=foods,
+        csrf_token=csrf_token(),
+    )
+
+@workspace.route(
+    "/plans/<int:plan_id>",
+    methods=["GET", "POST"],
+)
 @login_required
 def plan_detail(plan_id):
     user = current_user()
@@ -602,13 +709,19 @@ def settings():
     if request.method == "POST" and valid_csrf(
         request.form.get("csrf_token")
     ):
-        name = request.form.get("display_name", "").strip()
+        name = request.form.get(
+            "display_name",
+            "",
+        ).strip()
 
         if 2 <= len(name) <= 80:
-            db = connect(current_app.config["DATABASE"])
+            db = connect(
+                current_app.config["DATABASE"]
+            )
 
             db.execute(
-                "UPDATE users SET display_name=?,updated_at=? WHERE id=?",
+                "UPDATE users SET display_name=?,updated_at=? "
+                "WHERE id=?",
                 (
                     name,
                     now(),

@@ -2040,3 +2040,32 @@ footer {
 }
 
 
+.ifct-local-names {
+    margin-top: 10px;
+}
+
+.ifct-local-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+}
+
+.ifct-local-name-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ifct-local-name {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--soft);
+    color: var(--deep);
+    font-size: 0.85rem;
+    font-weight: 600;
+}

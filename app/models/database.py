@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS foods (
     carbohydrates REAL NOT NULL,
     fat REAL NOT NULL,
     fiber REAL NOT NULL DEFAULT 0,
+    food_type TEXT NOT NULL DEFAULT 'Vegetarian',
+    meal_type TEXT NOT NULL DEFAULT '',
     is_demo INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL
 );
@@ -121,6 +123,41 @@ CREATE TABLE IF NOT EXISTS diet_plans (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS recipes (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    name TEXT NOT NULL,
+    food_type TEXT NOT NULL DEFAULT 'Vegetarian',
+    category TEXT NOT NULL DEFAULT '',
+    meal_type TEXT NOT NULL DEFAULT '',
+    servings REAL NOT NULL DEFAULT 1 CHECK(servings > 0),
+    preparation_method TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+    id INTEGER PRIMARY KEY,
+    recipe_id INTEGER NOT NULL
+        REFERENCES recipes(id) ON DELETE CASCADE,
+    food_id INTEGER NOT NULL
+        REFERENCES foods(id),
+    quantity REAL NOT NULL CHECK(quantity > 0),
+    unit TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipes_owner
+    ON recipes(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe
+    ON recipe_ingredients(recipe_id);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_food
+    ON recipe_ingredients(food_id);
 
 CREATE TABLE IF NOT EXISTS diet_plan_meals (
     id INTEGER PRIMARY KEY,
@@ -192,22 +229,15 @@ CREATE TABLE IF NOT EXISTS food_components (
         REFERENCES foods(id) ON DELETE CASCADE,
     component_id INTEGER NOT NULL
         REFERENCES component_definitions(id) ON DELETE CASCADE,
-
     value REAL,
     standard_deviation REAL,
-
     unit TEXT NOT NULL,
     basis TEXT NOT NULL,
-
     measurement_status TEXT NOT NULL DEFAULT 'reported',
-
     source_food_code TEXT NOT NULL DEFAULT '',
     source_reference TEXT NOT NULL DEFAULT '',
-
     created_at TEXT NOT NULL,
-
     UNIQUE(food_id, component_id),
-
     CHECK (
         measurement_status IN (
             'reported',
@@ -299,6 +329,25 @@ def initialise(path: str | Path) -> None:
             if "archived_at" not in columns:
                 connection.execute(
                     "ALTER TABLE patients ADD COLUMN archived_at TEXT"
+                )
+
+        # Migration for food classification fields.
+        if "foods" in tables:
+            columns = {
+                row["name"]
+                for row in connection.execute("PRAGMA table_info(foods)")
+            }
+
+            if "food_type" not in columns:
+                connection.execute(
+                    "ALTER TABLE foods ADD COLUMN "
+                    "food_type TEXT NOT NULL DEFAULT 'Vegetarian'"
+                )
+
+            if "meal_type" not in columns:
+                connection.execute(
+                    "ALTER TABLE foods ADD COLUMN "
+                    "meal_type TEXT NOT NULL DEFAULT ''"
                 )
 
         connection.executescript(SCHEMA)

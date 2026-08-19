@@ -1,0 +1,556 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    .recipe-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .recipe-form-full {
+        grid-column: 1 / -1;
+    }
+
+    .recipe-section-title {
+        margin: 34px 0 16px;
+        padding-bottom: 9px;
+        border-bottom: 1px solid var(--line);
+        font-family: Georgia, serif;
+        font-size: 1.1rem;
+        color: var(--ink);
+    }
+
+    .recipe-ingredient-row {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) auto;
+        gap: 12px;
+        align-items: end;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fcfafb;
+    }
+
+    .recipe-ingredient-row label {
+        margin-bottom: 7px;
+    }
+
+    .recipe-remove-button {
+        min-height: 44px;
+        padding: 10px 13px;
+        border: 1px solid #ead5dd;
+        border-radius: 9px;
+        background: #fff8fa;
+        color: var(--deep);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .recipe-remove-button:hover {
+        background: #f8eef1;
+    }
+
+    .recipe-add-ingredient {
+        margin-top: 8px;
+    }
+
+    .recipe-empty-ingredients {
+        padding: 24px;
+        text-align: center;
+        border: 1px dashed #ded2d8;
+        border-radius: 12px;
+        color: var(--muted);
+        background: #fcfafb;
+    }
+
+    .recipe-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 32px;
+    }
+
+    textarea.recipe-textarea {
+        min-height: 130px;
+        resize: vertical;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 760px) {
+        .recipe-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .recipe-form-full {
+            grid-column: auto;
+        }
+
+        .recipe-ingredient-row {
+            grid-template-columns: 1fr;
+        }
+
+        .recipe-remove-button {
+            width: 100%;
+        }
+    }
+</style>
+
+
+<main class="page">
+
+    <header style="margin-bottom: 36px;">
+
+        <p class="eyebrow">
+            RECIPE LIBRARY
+        </p>
+
+        <h1>
+            Add a recipe
+        </h1>
+
+        <p style="
+            color: var(--muted);
+            max-width: 650px;
+            margin-top: 8px;
+        ">
+            Create a recipe using foods from your IFCT database
+            or your own food library.
+        </p>
+
+    </header>
+
+
+    <section class="card" style="margin: 0;">
+
+        <form
+            method="post"
+            action="{{ url_for('workspace.recipe_new') }}"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token }}"
+            >
+
+
+            <!-- =================================================
+                 RECIPE INFORMATION
+                 ================================================= -->
+
+            <h3 class="recipe-section-title">
+                Recipe Information
+            </h3>
+
+            <div class="recipe-form-grid">
+
+                <div class="recipe-form-full">
+
+                    <label for="name">
+                        Recipe name
+                    </label>
+
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        placeholder="e.g. Besan Cheela"
+                        required
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label for="food_type">
+                        Food Type
+                    </label>
+
+                    <select id="food_type" name="food_type">
+
+                        <option value="Vegetarian">
+                            Vegetarian
+                        </option>
+
+                        <option value="Non-Vegetarian">
+                            Non-Vegetarian
+                        </option>
+
+                        <option value="Vegan">
+                            Vegan
+                        </option>
+
+                        <option value="Eggetarian">
+                            Eggetarian
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label for="category">
+                        Category
+                    </label>
+
+                    <select id="category" name="category">
+
+                        <option value="">
+                            Select category
+                        </option>
+
+                        <option value="Breakfast">
+                            Breakfast
+                        </option>
+
+                        <option value="Main Course">
+                            Main Course
+                        </option>
+
+                        <option value="Snack">
+                            Snack
+                        </option>
+
+                        <option value="Salad">
+                            Salad
+                        </option>
+
+                        <option value="Soup">
+                            Soup
+                        </option>
+
+                        <option value="Beverage">
+                            Beverage
+                        </option>
+
+                        <option value="Dessert">
+                            Dessert
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label for="meal_type">
+                        Meal Type
+                    </label>
+
+                    <select id="meal_type" name="meal_type">
+
+                        <option value="">
+                            Select meal type
+                        </option>
+
+                        <option value="Breakfast">
+                            Breakfast
+                        </option>
+
+                        <option value="Mid-morning snack">
+                            Mid-morning snack
+                        </option>
+
+                        <option value="Lunch">
+                            Lunch
+                        </option>
+
+                        <option value="Evening snack">
+                            Evening snack
+                        </option>
+
+                        <option value="Dinner">
+                            Dinner
+                        </option>
+
+                        <option value="Bedtime snack">
+                            Bedtime snack
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label for="servings">
+                        Number of servings
+                    </label>
+
+                    <input
+                        id="servings"
+                        name="servings"
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value="1"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 INGREDIENTS
+                 ================================================= -->
+
+            <h3 class="recipe-section-title">
+                Ingredients
+            </h3>
+
+            <p style="
+                color: var(--muted);
+                font-size: 0.88rem;
+                margin: 0 0 18px;
+            ">
+                Select foods from your existing food database and
+                enter the quantity used in the recipe.
+            </p>
+
+
+            <div id="ingredients-container">
+
+                <div class="recipe-ingredient-row">
+
+                    <div>
+
+                        <label>
+                            Food
+                        </label>
+
+                        <select
+                            name="ingredient_food_id[]"
+                            required
+                        >
+
+                            <option value="">
+                                Select food
+                            </option>
+
+                            {% for food in foods %}
+
+                                <option value="{{ food.id }}">
+                                    {{ food.name }}
+                                    {% if food.category %}
+                                        — {{ food.category }}
+                                    {% endif %}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div>
+
+                        <label>
+                            Quantity
+                        </label>
+
+                        <input
+                            name="ingredient_quantity[]"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="50"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div>
+
+                        <label>
+                            Unit
+                        </label>
+
+                        <input
+                            name="ingredient_unit[]"
+                            type="text"
+                            placeholder="g"
+                            value="g"
+                            required
+                        >
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="recipe-remove-button"
+                        onclick="removeIngredient(this)"
+                    >
+                        Remove
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="button secondary recipe-add-ingredient"
+                onclick="addIngredient()"
+            >
+                + Add ingredient
+            </button>
+
+
+            <!-- =================================================
+                 PREPARATION
+                 ================================================= -->
+
+            <h3 class="recipe-section-title">
+                Preparation Method
+            </h3>
+
+            <div>
+
+                <label for="preparation_method">
+                    Preparation instructions
+                </label>
+
+                <textarea
+                    id="preparation_method"
+                    name="preparation_method"
+                    class="recipe-textarea"
+                    placeholder="Describe how to prepare the recipe..."
+                ></textarea>
+
+            </div>
+
+
+            <!-- =================================================
+                 NOTES
+                 ================================================= -->
+
+            <h3 class="recipe-section-title">
+                Notes
+            </h3>
+
+            <div>
+
+                <label for="notes">
+                    Additional notes
+                </label>
+
+                <textarea
+                    id="notes"
+                    name="notes"
+                    class="recipe-textarea"
+                    placeholder="Optional notes, serving suggestions, substitutions, etc."
+                ></textarea>
+
+            </div>
+
+
+            <!-- =================================================
+                 ACTIONS
+                 ================================================= -->
+
+            <div class="recipe-actions">
+
+                <button
+                    type="submit"
+                    class="button"
+                >
+                    Save Recipe
+                </button>
+
+                <a
+                    class="button secondary"
+                    href="{{ url_for('workspace.foods') }}"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </section>
+
+</main>
+
+
+<script>
+    function addIngredient() {
+
+        const container =
+            document.getElementById("ingredients-container");
+
+        const firstRow =
+            container.querySelector(".recipe-ingredient-row");
+
+        if (!firstRow) {
+            return;
+        }
+
+        const newRow =
+            firstRow.cloneNode(true);
+
+        newRow
+            .querySelectorAll("input")
+            .forEach(input => {
+
+                if (input.name === "ingredient_quantity[]") {
+                    input.value = "";
+                }
+
+                if (input.name === "ingredient_unit[]") {
+                    input.value = "g";
+                }
+
+            });
+
+        newRow
+            .querySelector("select")
+            .value = "";
+
+        container.appendChild(newRow);
+    }
+
+
+    function removeIngredient(button) {
+
+        const container =
+            document.getElementById("ingredients-container");
+
+        const rows =
+            container.querySelectorAll(".recipe-ingredient-row");
+
+        if (rows.length <= 1) {
+            return;
+        }
+
+        button
+            .closest(".recipe-ingredient-row")
+            .remove();
+    }
+</script>
+
+{% endblock %}
+
+
+

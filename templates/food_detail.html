@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .ifct-detail-section {
+        margin-top: 22px;
+        padding: 22px;
+        border: 1px solid #eee3e7;
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    .ifct-detail-section:first-child {
+        margin-top: 0;
+    }
+
+    .ifct-detail-section h3 {
+        margin: 0 0 15px;
+        font-family: Georgia, serif;
+        font-size: 1.15rem;
+        font-weight: 400;
+        color: var(--ink);
+    }
+
+    .ifct-component-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+    }
+
+    .ifct-component {
+        padding: 13px 14px;
+        border: 1px solid #eee3e7;
+        border-radius: 10px;
+        background: #fcfafb;
+    }
+
+    .ifct-component strong {
+        display: block;
+        color: var(--ink);
+        font-size: .88rem;
+        line-height: 1.35;
+    }
+
+    .ifct-component small {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: .74rem;
+    }
+
+    .ifct-component-value {
+        margin-top: 8px;
+    }
+
+    .ifct-component-value strong {
+        font-size: .95rem;
+    }
+
+    .placeholder-section {
+        margin-top: 22px;
+        padding: 22px;
+        border: 1px dashed #ded2d8;
+        border-radius: 14px;
+        background: #fcfafb;
+    }
+
+    .placeholder-section h3 {
+        margin: 0 0 8px;
+        font-family: Georgia, serif;
+        font-size: 1.15rem;
+        font-weight: 400;
+        color: var(--ink);
+    }
+
+    .placeholder-section p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+        .ifct-component-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+{% set category_labels = {
+    'proximate': 'Proximate Composition',
+    'energy': 'Energy',
+    'carbohydrate': 'Carbohydrate',
+    'dietary_fibre': 'Dietary Fibre',
+    'oligosaccharide': 'Oligosaccharides',
+    'phytate': 'Phytate',
+    'phytosterol': 'Phytosterols',
+    'saponin': 'Saponins',
+    'fatty_acid': 'Fatty Acids',
+    'other': 'Other Components'
+} %}
+
+{% set category_order = [
+    'proximate',
+    'energy',
+    'carbohydrate',
+    'dietary_fibre',
+    'oligosaccharide',
+    'phytate',
+    'phytosterol',
+    'saponin',
+    'fatty_acid',
+    'other'
+] %}
+
+<main class="page">
+
+    <div class="ifct-detail-card">
+
+        <div class="ifct-detail-header">
+
+            <div>
+                {% if is_ifct %}
+                <p class="eyebrow">ICMR-NIN IFCT 2017</p>
+                {% else %}
+                <p class="eyebrow">CUSTOM FOOD</p>
+                {% endif %}
+
+                <h2>{{ food.name }}</h2>
+
+                <p class="ifct-food-meta">
+                    {% if food.source_food_code %}
+                    {{ food.source_food_code }} ·
+                    {% endif %}
+                    {{ food.category or 'Uncategorized' }}
+                    · {{ food.serving_size }}
+                </p>
+            </div>
+
+            <a class="button ifct-back-button" href="{{ url_for('workspace.foods') }}">
+                Back to library
+            </a>
+
+        </div>
+
+        <div class="ifct-basic-grid">
+
+            <div class="ifct-nutrient">
+                <strong>{{ food.calories }}</strong>
+                <small>kcal</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>{{ food.protein }}</strong>
+                <small>protein g</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>{{ food.carbohydrates }}</strong>
+                <small>carbs g</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>{{ food.fat }}</strong>
+                <small>fat g</small>
+            </div>
+
+            <div class="ifct-nutrient">
+                <strong>{{ food.fiber }}</strong>
+                <small>fibre g</small>
+            </div>
+
+        </div>
+
+        <div style="margin-top: 20px; color: var(--muted); font-size: 0.85rem;">
+            <strong style="color: var(--ink);">Unit:</strong> {{ food.unit }}
+        </div>
+
+        {% if is_ifct %}
+
+        {% for category in category_order %}
+        {% if component_groups.get(category) %}
+
+        <section class="ifct-detail-section">
+
+            <h3>{{ category_labels.get(category, category) }}</h3>
+
+            <div class="ifct-component-grid">
+
+                {% for component in component_groups[category] %}
+
+                <div class="ifct-component">
+
+                    <div>
+                        <strong>{{ component.name }}</strong>
+                        {% if component.code %}
+                        <small>{{ component.code }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="ifct-component-value">
+                        {% if component.measurement_status == 'below_detection_limit' %}
+                        <strong>Below detectable limit</strong>
+                        {% elif component.value is not none %}
+                        <strong>{{ component.value }}</strong>
+                        {% if component.standard_deviation is not none %}
+                        <small>± {{ component.standard_deviation }}</small>
+                        {% endif %}
+                        <small>{{ component.unit or '' }}</small>
+                        {% else %}
+                        <strong>—</strong>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+        {% endif %}
+        {% endfor %}
+
+        {% if not component_groups %}
+        <div class="ifct-status" style="margin-top: 22px;">
+            No additional component data reported.
+        </div>
+        {% endif %}
+
+        <div class="ifct-source-note">
+            Source:
+            {{ food.source_name or 'ICMR-NIN IFCT 2017' }}
+            {% if food.source_version %}
+            · {{ food.source_version }}
+            {% endif %}
+            {% if food.regions_count %}
+            · {{ food.regions_count }} regions
+            {% endif %}
+        </div>
+
+        {% endif %}
+
+        <section class="placeholder-section">
+            <h3>Ingredients</h3>
+            <p>Ingredient details will be available in a future update.</p>
+        </section>
+
+        <section class="placeholder-section">
+            <h3>Preparation Methods</h3>
+            <p>Preparation method details will be available in a future update.</p>
+        </section>
+
+    </div>
+
+</main>
+
+{% endblock %}

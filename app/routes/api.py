@@ -67,14 +67,19 @@ def patient_list():
         patients=[dict(row) for row in rows]
     )
 
+
+@api.get("/foods")
 @api.get("/foods")
 def food_list():
     """
     Search the shared IFCT food library.
 
-    Returns basic nutrition and IFCT source information.
-    Login is required because this endpoint is used inside
-    the authenticated workspace.
+    Search priority:
+    1. Exact food name
+    2. Exact alias
+    3. Food name starts with query
+    4. Alias starts with query
+    5. Partial food name / alias
     """
 
     user = current_user()
@@ -84,7 +89,11 @@ def food_list():
 
     query = request.args.get("q", "").strip()
     category = request.args.get("category", "").strip()
-    limit = min(max(int(request.args.get("limit", 50)), 1), 100)
+
+    try:
+        limit = min(max(int(request.args.get("limit", 50)), 1), 100)
+    except (TypeError, ValueError):
+        limit = 50
 
     db = connect(current_app.config["DATABASE"])
 
@@ -92,15 +101,74 @@ def food_list():
     params = []
 
     if query:
-        conditions.append(
-            "(foods.name LIKE ? OR food_sources.source_food_code LIKE ?)"
-        )
         search = f"%{query}%"
-        params.extend([search, search])
+
+        conditions.append(
+            """
+            (
+                foods.name LIKE ?
+                OR food_sources.source_food_code LIKE ?
+                OR EXISTS (
+                    SELECT 1
+                    FROM food_aliases
+                    WHERE food_aliases.food_id = foods.id
+                      AND food_aliases.alias LIKE ?
+                )
+            )
+            """
+        )
+
+        params.extend([
+            search,
+            search,
+            search,
+        ])
 
     if category:
         conditions.append("foods.category = ?")
         params.append(category)
+
+    if query:
+        exact = query
+        starts = f"{query}%"
+
+        order_by = """
+            CASE
+                WHEN foods.name LIKE ? THEN 0
+
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM food_aliases
+                    WHERE food_aliases.food_id = foods.id
+                      AND food_aliases.alias LIKE ?
+                ) THEN 1
+
+                WHEN foods.name LIKE ? THEN 2
+
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM food_aliases
+                    WHERE food_aliases.food_id = foods.id
+                      AND food_aliases.alias LIKE ?
+                ) THEN 3
+
+                ELSE 4
+            END,
+            foods.category,
+            foods.name
+        """
+
+        params.extend([
+            exact,
+            exact,
+            starts,
+            starts,
+        ])
+    else:
+        order_by = """
+            foods.category,
+            foods.name
+        """
 
     params.append(limit)
 
@@ -133,7 +201,8 @@ def food_list():
 
         WHERE {" AND ".join(conditions)}
 
-        ORDER BY foods.category, foods.name
+        ORDER BY
+            {order_by}
 
         LIMIT ?
         """,
@@ -152,8 +221,11 @@ def food_detail(food_id):
     """
     Return complete IFCT information for one food.
 
-    Includes basic nutrition, IFCT source metadata,
-    and all available component measurements.
+    Includes:
+    - basic nutrition
+    - IFCT source metadata
+    - local/common names
+    - all available component measurements
     """
 
     user = current_user()
@@ -162,6 +234,10 @@ def food_detail(food_id):
         return auth_error()
 
     db = connect(current_app.config["DATABASE"])
+
+    # ---------------------------------------------------------
+    # FOOD
+    # ---------------------------------------------------------
 
     food = db.execute(
         """
@@ -198,7 +274,30 @@ def food_detail(food_id):
     ).fetchone()
 
     if not food:
-        return jsonify(error="Food not found."), 404
+        return jsonify(
+            error="Food not found."
+        ), 404
+
+    # ---------------------------------------------------------
+    # LOCAL / COMMON FOOD NAMES
+    # ---------------------------------------------------------
+
+    aliases = db.execute(
+        """
+        SELECT
+            id,
+            alias,
+            alias_type
+        FROM food_aliases
+        WHERE food_id = ?
+        ORDER BY id
+        """,
+        (food_id,),
+    ).fetchall()
+
+    # ---------------------------------------------------------
+    # NUTRITION COMPONENTS
+    # ---------------------------------------------------------
 
     components = db.execute(
         """
@@ -229,7 +328,12 @@ def food_detail(food_id):
         (food_id,),
     ).fetchall()
 
+    # ---------------------------------------------------------
+    # RESPONSE
+    # ---------------------------------------------------------
+
     return jsonify(
         food=dict(food),
+        aliases=[dict(row) for row in aliases],
         components=[dict(row) for row in components],
     )
